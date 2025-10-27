@@ -59,15 +59,15 @@ const MESSAGES = {
         requiredField: (type : any) => `${type} is required.`,
     },
     api: {
-    //    baseUrl: 'https://api.uat.finright.in/v1'
+       baseUrl: 'https://api.uat.finright.in/v1'
     //    baseUrl: 'https://api.epf.finright.in/v1'
-        baseUrl: 'http://localhost:3001/v1'
+        // baseUrl: 'http://localhost:3001/v1'
     },
     BASE_URL: 'http://localhost:',
     PF_CHECK_UP_BASE_URL: "https://uat.finright.in",
     PF_CHECK_UP_PROD_URL: "https://uat.finright.in/operation",
-    // CHEKC_MY_PF_URL: "https://pf.finright.in/check-pf-withdrawability",
-    CHEKC_MY_PF_URL: "http://localhost:5174/check-pf-withdrawability" , 
+    CHEKC_MY_PF_URL: "https://pf.finright.in/check-pf-withdrawability",
+    // CHEKC_MY_PF_URL: "http://localhost:5174/check-pf-withdrawability" , 
     THEFYNPRINT_URL: "https://uat.thefynprint.com/service"
 
 };
