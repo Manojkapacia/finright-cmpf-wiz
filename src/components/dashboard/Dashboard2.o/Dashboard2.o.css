@@ -1,0 +1,114 @@
+::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scroll-container {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+
+.responsive-margin-bottom {
+    margin-bottom: -30%;
+  }
+  
+  @media (max-width: 767px) {
+    .responsive-margin-bottom {
+      margin-bottom: -140%;
+    }
+  }
+
+  
+.financial-gradient {
+  /* background: linear-gradient(135deg, #304DFF 5%, #1694CE 33%, #09B6B6 66%, #02CAA8 100%); */
+ 
+  background: linear-gradient(90deg, #304DFF 0%, #1694CE 25.48%, #09B6B6 76.92%, #02CAA8 89.42%);
+  z-index: 0;
+  box-shadow: 0px 0px 10px 0px rgba(188, 194, 230, 0.45);
+
+}
+
+.financial-banner {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* Icons */
+.icon-dollar {
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.15);
+  transform: rotate(12deg);
+  z-index: 1;
+}
+
+.icon-chart-line {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 2rem;
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.15);
+  transform: rotate(-12deg);
+  z-index: 1;
+}
+
+.icon-chart-bar {
+  position: absolute;
+  top: 1rem;
+  right: 3rem;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.15);
+  transform: rotate(45deg);
+  z-index: 1;
+}
+
+/* Decorative dots */
+.dot {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+.dot1 {
+  top: 0.75rem;
+  right: 5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.dot2 {
+  bottom: 1rem;
+  right: 4rem;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+.dot3 {
+  top: 2rem;
+  right: 1.5rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Button hover */
+.start-swipe-btn {
+  border: none !important;
+  width: 160px;
+  height: 32px;
+  border-radius: 100px;
+  padding: 8px;
+  gap: 10px; /* This won't affect unless you're using flex layout inside the button */
+  opacity: 1;
+  backdrop-filter: blur(4px);
+  background-color: #ffffff66; /* Equivalent to rgba(255, 255, 255, 0.4) */
+  box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.2) inset;
+}
+
+.start-swipe-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3); /* Can tweak if desired */
+}
+
+
+  

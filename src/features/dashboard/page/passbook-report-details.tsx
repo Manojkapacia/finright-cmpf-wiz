@@ -16,18 +16,29 @@ import {
 } from "./../../../components/common/currency-formatter";
 import { BsChevronDown, BsChevronRight } from "react-icons/bs";
 import AccountDetaillsModel from "../../../components/dashboard/Models/AccountDetaillsModel";
-import { getShareByPassbook } from "../../../components/common/data-transform";
+import { calculatePassbookClosingBalance } from "../../../components/common/data-transform";
 import TransactionDetailsModel from "../../../components/dashboard/Models/TransactionDeatailsModel";
 import { ToTitleCase } from "../../../components/common/title-case";
 import WithdrawTransferNowModel from "../../../components/dashboard/Models/WithdrawTransferNowModel";
 import ConnectNowModel from "../../../components/dashboard/Models/ConnectNowModel";
 import { CustomButtonAll } from "../../../helpers/helpers";
 import { decryptData } from "../../../components/common/encryption-decryption";
-import { setClarityTag } from "../../../helpers/ms-clarity";
 import { formatJoiningDate } from "../../../components/common/dates-converter";
 import { ZohoLeadApi } from "../../../components/common/zoho-lead";
 import VanityCard from "../../../components/dashboard/VanityCard/VanityCard";
 import CurrentBalanceModel from "../../../components/dashboard/Models/CurrentBalanceModel";
+import { getForEpfoStatus } from "../../../components/common/api";
+import CompleteProfileModel from "../../../components/dashboard/Models/CompleteProfileModel";
+import CallBookedSlider from "../../../components/dashboard/Models/CallBookedModel";
+import { CalendlySlider } from "../../../components/dashboard/Models/CalendlySliderModel";
+import UrgentProfile from "../../../assets/suport-profile.png"
+import InitialCallBookingSlider from "../../../components/dashboard/Models/InitialCallBookingSlider";
+import AfterInitialPaidCallBooking from "../../../components/dashboard/Models/afterInitialPaidCallBooking";
+import AdvancePaidCallBooking from "../../../components/dashboard/Models/advancePaidCallBooking";
+import { formatToISO } from "../../../helpers/dates-convertor";
+import PaymentABTestSlider from "../../../components/dashboard/Models/paymentABTestSlider";
+import { handleCalendlyBooking } from "../../../helpers/calendryBooking";
+import BookingFaildSlider from "../../../components/dashboard/Models/bookingFaildSlider";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -46,6 +57,39 @@ const PassboolReport = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [zohoModalOpen, setZohoModalOpen] = useState(false);
   const [, setZohoUserID] = useState<any>();
+  const [calendlyLink, setCalendlyLink] = useState("");
+  const [showCalendlySlider, setShowCalendlySlider] = useState(false);
+
+  const [showBookedSlider, setShowBookedSlider] = useState(false);
+  const [bookedDate, setBookedDate] = useState("");
+  const [bookedTime, setBookedTime] = useState("");
+  const [assigneeName, setAssigneeName] = useState("");
+  const [lastName, setLastName] = useState("");
+  // const [, setPaymentStatus] = useState("");
+  const [showInitialCallSlider, setShowInitialCallSlider] = useState(false);
+  const [showAfterInitialCallbooking, setShowAfterInitialCallbooking] = useState(false);
+  const [showAdvancePaidCallBooking, setShowAdvancePaidCallBooking] = useState(false);
+  const [isBookingRes, setIsBookingRes] = useState(false);
+  const [showPaymentABTestSlider, setShowPaymentABTestSlider] = useState(false);
+  const [showBookingFaildSlider, setShowBookingFaildSlider]= useState(false)
+
+  interface ZohoUpdateLeadParams {
+    tag?: string;
+    status?: string | null;
+    intent?: string | null;
+    intentStatus?: "Scheduled" | "Not Scheduled" | null;
+    callDate?: string | null;
+    callTime?: string | null;
+  }
+  useEffect(() => {
+    if (isBookingRes) {
+      zohoUpdateLead({
+        intentStatus: "Scheduled",
+        callDate: bookedDate,
+        callTime: bookedTime
+      })
+    }
+  }, [isBookingRes]);
 
   useEffect(() => {
     const storedData = localStorage?.getItem("zohoUserId");
@@ -55,8 +99,34 @@ const PassboolReport = () => {
     }
   }, []);
 
+  const handleCalendlyEvent = async (intent?: string) => {
+    zohoUpdateLead({intent:intent});
+
+    await handleCalendlyBooking({
+          zohoIntent: intent,
+          setBookedDate,
+          setBookedTime,
+          setAssigneeName,
+          setShowBookedSlider,
+          setShowPaymentABTestSlider,
+          setShowInitialCallSlider,
+          setShowAfterInitialCallbooking,
+          setShowAdvancePaidCallBooking,
+          setLastName,
+          setCalendlyLink,
+          setShowCalendlySlider,
+          navigate,
+          setShowBookingFaildSlider
+        });
+  };
+
   // zoho lead creation
-  const zohoUpdateLead = async (intent:any) => {
+  const zohoUpdateLead = async ({
+    intent,
+    intentStatus,
+    callDate,
+    callTime
+  }: ZohoUpdateLeadParams) => {
     const rawData = decryptData(localStorage.getItem("lead_data"));
     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
     const userName = decryptData(localStorage.getItem("user_name"));
@@ -78,31 +148,27 @@ const PassboolReport = () => {
         Mobile: user?.Mobile,
         Email: user?.Email,
         Wants_To: user?.Wants_To,
-        Lead_Status: existUser ? "Reopen" : user?.Lead_Status,
+        Lead_Status: user?.Lead_Status,
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: isScrappedFully ? "Full Report" : "Partial Report",
-        CheckMyPF_Intent: intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : (intentStatus === "Scheduled" ? "Scheduled" : "Not Scheduled"),
+      Call_Schedule: intentStatus === "Scheduled" && callDate && callTime
+        ? formatToISO(callDate, callTime)
+        : user.Call_Schedule || "",
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData);
     }
   }
 
-  const handleOpenWithdrawModal = async () => {
-    setShowModal({ show: true, type: "withdraw" });
-    setClarityTag("BUTTON_TRANSFER", "Show Passbook transaction");
-    zohoUpdateLead("Transfer Funds");
-    // const userBalance = decryptData(localStorage.getItem("user_balance"))
-    // const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
-    // if (userBalance > 50000) {
-    //   try {
-    //     await post('lead/knowlarity-lead', { mobileNumber, tag: "Transfer Funds" });
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
-  };
+  // const handleOpenWithdrawModal = async () => {
+  //   setShowModal({ show: true, type: "withdraw" });
+  //   zohoUpdateLead("Transfer Funds");
+  // };
 
   useEffect(() => {
     if (!currentUanData) return;
@@ -115,7 +181,7 @@ const PassboolReport = () => {
     setServiceHistory(serviceHistory);
     setSelectedPassbookData(passbookData);
     getDropdownYears(passbookData);
-    setPassbookSharesData(getShareByPassbook(passbookData))
+    setPassbookSharesData(calculatePassbookClosingBalance(passbookData))
   }, [currentUanData, selectedMemberId]);
 
   const getDropdownYears = (passbookData: any) => {
@@ -151,7 +217,21 @@ const PassboolReport = () => {
 
   const selectedYearKey = selectedYear.split(": ")[1]?.split("-")[0]; // Extract "2023" from "Financial Year: 2023-24"
   const transactions = selectedPassbookData?.[selectedYearKey]?.transactions || [];
-  const reversedTransactions = transactions.slice().reverse();
+  const monthList = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+  
+  const reversedTransactions = transactions.slice().sort((a:any, b:any) => {
+    const [monA, yearA] = a.wageMonth.split('-');
+    const [monB, yearB] = b.wageMonth.split('-');
+    
+    const dateA = new Date(parseInt(yearA), monthList.indexOf(monA));
+    const dateB = new Date(parseInt(yearB), monthList.indexOf(monB));
+    
+    return dateA.getTime() - dateB.getTime(); 
+  });
+
 
   const handleAccountDetailsClick = () => {
     setShowModal({ show: true, type: 'account details' });
@@ -167,6 +247,52 @@ const PassboolReport = () => {
     setShowModal({ show: true, type: "currentbalance" });
   }
 
+   const handleTalkToExpert = () => {
+      if(currentUanData?.rawData?.isScrappedFully){
+        // navigate('/express-withdraw', { state: { currentUanData: props?.currentUanData, fromPfreport: true,} });
+        setShowModal({ show: true, type: "connectNow" });
+        // zohoUpdateLead("Need Consultation");
+        // // getZohoUserId("Need Consultation")
+      }else{
+         setShowModal({ show: true, type: "connectEpfo" });
+      }
+  };
+
+    const navigateToScrapper = async() => {
+      // navigate("/login-uan", {
+      //   state: {
+      //     type: "partial",
+      //     currentUan: props?.currentUanData?.profileData?.data?.uan,
+      //     mobile_number:
+      //       props?.currentUanData?.profileData?.data?.phoneNumber.replace(
+      //         /^91/,
+      //         ""
+      //       )
+      //   },
+      // });
+       try {
+      const data = await getForEpfoStatus("/epfo/status");
+      if (data?.isAvailable) {
+        navigate("/login-uan", {
+          state: {
+            type: "refresh",
+            currentUan: currentUanData?.profileData?.data?.uan,
+            mobile_number:
+              currentUanData?.profileData?.data?.phoneNumber.replace(/^91/, ""),
+            dashboard: true,
+          },
+        });
+      } else {
+        setShowModal({ show: true, type: "serverDown" });
+      }
+    } catch (err) {
+      setShowModal({ show: true, type: "serverDown" });
+    }
+    };
+
+    const handleserverDown =() => {
+ setShowModal({ show: false, type: "serverDown" });
+}
   return (
     <>
       {showModal?.show && showModal?.type === 'account details' && <AccountDetaillsModel isOpen={showModal?.show} onClose={() => { setShowModal({ show: false, type: 'account details' }) }} serviceDetails={serviceHistory} companyName={selectedCompany} passbookSharesData={passbookSharesData} />}
@@ -174,6 +300,7 @@ const PassboolReport = () => {
       {showModal.show && showModal.type === "withdraw" && (
         <WithdrawTransferNowModel
           setShowModal={setShowModal}
+          onTalkToExpert={handleTalkToExpert}
         />
       )}
 
@@ -189,6 +316,27 @@ const PassboolReport = () => {
               title="Current Balance"
             />
           )}
+        
+         {showModal.show && showModal.type === "connectEpfo" && (
+        <CompleteProfileModel
+          setShowModal={setShowModal}
+          onContinue={() => {
+            navigateToScrapper();
+          }}
+          bodyText="Please complete your profile before initiating withdrawal request"
+        />
+      )}
+  
+        
+         {showModal.show && showModal.type === "serverDown" && (
+        <CompleteProfileModel
+          setShowModal={setShowModal}
+          onContinue={handleserverDown}
+          headText="EPFO servers are not responding"
+          bodyText="Looks like EPFO servers are currently not responding, please try again after sometime."
+        />
+      )}
+
       <ZohoModal isOpen={zohoModalOpen} onClose={() => setZohoModalOpen(false)} />
       <div
         className="container-fluid pt-3">
@@ -215,10 +363,10 @@ const PassboolReport = () => {
               <CustomButtonAll
                 content="Withdraw/ Transfer Funds"
                 color="null"
-                onClick={handleOpenWithdrawModal}
+                onClick={() => handleCalendlyEvent("Transfer Funds")}
               />
             </div>
-            <div className="card border-0  mt-2 shadow-sm" style={{ height: "3.5rem", background: "white",borderRadius:"1rem" }}>
+            <div className="card border-0  mt-2 shadow-sm" style={{ height: "3.5rem", backgroundColor: "#F7F9FF",borderRadius:"1rem" }}>
               <div className="card-body d-flex flex-column p-2">
                 <div
                   className="d-flex justify-content-between align-items-center"
@@ -235,7 +383,7 @@ const PassboolReport = () => {
 
             {!isTrustPassbook &&
               <div className="mb-4 pb-1">
-                <div className="card  border-0 mt-3 shadow-sm" style={{ height: "3.5rem", background: "white" ,borderRadius:"1rem" }}>
+                <div className="card  border-0 mt-3 shadow-sm" style={{ height: "3.5rem", backgroundColor: "#F7F9FF",borderRadius:"1rem" }}>
                   <div className="card-body d-flex align-items-center p-2 position-relative">
                     <select
                       className="form-select w-100 paragraphText border-0"
@@ -299,7 +447,7 @@ const PassboolReport = () => {
                     const color = isNegativeTransaction ? "#FF4D4D" : "#00C7A5";
 
                     return (
-                      <div key={index} className="card border-0 my-2 py-3 relative shadow-sm" style={{borderRadius:"1rem"}}>
+                      <div key={index} className="card border-0 my-2 py-3 relative shadow-sm" style={{borderRadius:"1rem", backgroundColor: "#F7F9FF",}}>
                         <div className="d-flex align-items-center justify-content-between" onClick={() => { handleTransactionDetailsClick(transaction) }}>
                           <div className="d-flex align-items-center" style={{ cursor: "pointer" }}>
                             <div
@@ -352,6 +500,63 @@ const PassboolReport = () => {
             }
             {isTrustPassbook && <p className="text-center mt-3 text-muted">This is an expempted organisation</p>}
           </div>
+          {/* Calendly Slider */}
+          {calendlyLink && (
+            <CalendlySlider
+              show={showCalendlySlider}
+              onClose={() => setShowCalendlySlider(false)}
+              calendlyLink={calendlyLink}
+              prefillName={lastName || ""}
+              assigneeName={assigneeName || ""}
+              registeredMobileNumber={decryptData(localStorage.getItem("user_mobile") || "")}
+              onBookingConfirmed={(dbData) => {
+                setBookedDate(dbData.date);
+                setBookedTime(dbData.time);
+                setAssigneeName(dbData.assigneeName);
+                setShowBookedSlider(true);
+                setIsBookingRes(true);
+              }}
+            />
+          )}
+
+          {/* Booked Slider */}
+          <CallBookedSlider
+            show={showBookedSlider}
+            onClose={() => setShowBookedSlider(false)}
+            bookedDate={bookedDate || ""}
+            bookedTime={bookedTime || ""}
+            assignedExpert={assigneeName || "PF Expert"}
+            profileImage={UrgentProfile}
+          />
+
+          <InitialCallBookingSlider
+            show={showInitialCallSlider}
+            onClose={() => setShowInitialCallSlider(false)}
+            onBookCall={handleCalendlyEvent}
+          />
+
+          <AfterInitialPaidCallBooking
+            show={showAfterInitialCallbooking}
+            onClose={() => setShowAfterInitialCallbooking(false)}
+            onBookCall={handleCalendlyEvent}
+          />
+
+          <AdvancePaidCallBooking
+            show={showAdvancePaidCallBooking}
+            onClose={() => setShowAdvancePaidCallBooking(false)}
+            onBookCall={handleCalendlyEvent}
+          />
+
+          <PaymentABTestSlider
+            show={showPaymentABTestSlider}
+            onClose={() => setShowPaymentABTestSlider(false)}
+          />
+
+          <BookingFaildSlider
+            show={showBookingFaildSlider}
+            onClose={() => setShowBookingFaildSlider(false)}
+            onBookCall={handleCalendlyEvent}
+          />
 
         </div>
       </div>

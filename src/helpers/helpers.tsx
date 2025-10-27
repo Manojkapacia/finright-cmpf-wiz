@@ -205,6 +205,7 @@ export const CompleteProfileButton: React.FC<CompleteProfileButtonProps> = ({ te
 
 
 import React from "react";
+import { FaCheckCircle } from "react-icons/fa";
 
 interface WithdrawNowButtonProps {
   content: string;
@@ -230,11 +231,270 @@ export const WithdrawNowButton: React.FC<WithdrawNowButtonProps> = ({
         border: `1px solid ${color ? color : "#00C7A5"}`,
         fontWeight: 600,
         lineHeight: "100%",
-        width: "fit-content",
+        width: "7.5rem",
         cursor: "pointer",
       }}
     >
       {content}
     </button>
+  );
+};
+
+
+export const PFSuccessCard = () => {
+  return (
+    <div
+      className="card border-0 shadow-sm mt-3"
+      style={{
+        backgroundColor: "#34A853",
+        borderRadius: "1rem",
+        padding: "0.926rem",
+      }}
+    >
+      <div
+        className="d-flex justify-content-center align-items-center gap-2  text-white"
+        style={{
+          fontSize: "0.7125rem", // 13px
+          fontWeight: 400,
+         }}
+      >
+        <FaCheckCircle className="fs-6 gap-2" />
+        {/* <FaCheckCircle style={{ fontSize: "0.8125rem" }} /> */}
+        <span>Details Updated – Your PF report is now ready</span>
+      </div>
+    </div>
+  );
+};
+
+export const PFLoadingCard = ({ text }: any) => {
+  return (
+    <div
+      className="card border-0 shadow-sm mt-3"
+      style={{
+        backgroundColor: "#D4F8F2",
+        borderRadius: "1rem",
+        padding: "0.626rem",
+        display: "flex",              // Center wrapper content
+        justifyContent: "center",     // Horizontally center
+        alignItems: "center",         // Vertically center
+        minHeight: "3rem",            // Optional: ensures some vertical space
+      }}
+    >
+      <div
+        className="d-flex align-items-center"
+        style={{
+          color: "#34A853",
+          fontSize: "0.8125rem",
+          fontWeight: 400,
+          lineHeight: "1.2",
+          gap: "0.5rem",               // Space between spinner and text
+        }}
+      >
+        <div
+          style={{
+            width: "1rem",
+            height: "1rem",
+            border: "0.15em solid #34A853",
+            borderTop: "0.15em solid transparent",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        ></div>
+
+        <span style={{ wordBreak: "break-word" }}>{text}</span>
+      </div>
+
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+
+export const PFProgressCard = () => {
+  return (
+    <div
+      className="card border-0 shadow-sm"
+      style={{
+        padding: "1.25rem", // 20px in rem
+        borderRadius: "1rem",
+        backgroundColor: "#F7F9FF",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.3125rem", // 5px in rem
+        overflow: "hidden",
+        position: "relative",
+      }}
+    >
+      {/* Top thick bar with shine */}
+      <div
+        style={{
+          height: "2.0625rem", // 33px
+          width: "100%",
+          background: "#D9D9D9",
+          position: "relative",
+          overflow: "hidden",
+        
+        }}
+      >
+        <div
+          style={{
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: "-50%",
+            width: "50%",
+            height: "100%",
+            background:
+              "linear-gradient(120deg, transparent, rgba(255,255,255,0.6), transparent)",
+            animation: "shine 2s infinite",
+          }}
+        />
+      </div>
+
+      {/* Bottom thin bar with shine */}
+      <div
+        className="mt-2"
+        style={{
+          height: "0.4375rem", // 7px
+          width: "100%",
+          background: "#D9D9D9",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: "-50%",
+            width: "50%",
+            height: "100%",
+            background:
+              "linear-gradient(120deg, transparent, rgba(255,255,255,0.6), transparent)",
+            animation: "shine 2s infinite",
+          }}
+        />
+      </div>
+
+      {/* Shine Animation */}
+      <style>
+        {`
+          @keyframes shine {
+            0% {
+              left: -50%;
+            }
+            100% {
+              left: 100%;
+            }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+
+
+interface KycProfileCardProps {
+  label: string|number;
+  name: string|any;
+  onCorrectClick: () => void;
+  onIncorrectClick: () => void;
+   status: boolean | null;
+}
+
+export const KycProfileCard: React.FC<KycProfileCardProps> = ({
+  label,
+  name,
+  onCorrectClick,
+  onIncorrectClick,
+  status
+}) => {
+  return (
+    <div
+      className="card border-0 shadow-sm mb-3"
+      style={{
+        borderRadius: "1rem", // 16px
+        paddingTop: "0.9375rem", // 15px
+        paddingRight: "1.25rem", // 20px
+        paddingBottom: "0.9375rem", // 15px
+        paddingLeft: "1.25rem", // 20px
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.625rem", // 10px
+        backgroundColor: "#F7F9FF",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: "0.8125rem", // 13px
+            fontWeight: 400,
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            fontSize: "1rem", // 16px
+            marginTop:"-0.3rem",
+            fontWeight: 600,
+          }}
+        >
+          {name}
+        </div>
+      </div>
+
+     <div className="d-flex gap-2">
+  <button
+    type="button"
+    className="btn clickeffect"
+    onClick={onCorrectClick}
+    style={{
+      flex: 1,
+      borderRadius: "0.3125rem",
+      border: `1px solid #00C7A5`,
+      color: status === true ? "white" : "#00C7A5",
+      backgroundColor: status === true ? "#00C7A5" : "#E2F6F9",
+      fontSize: "0.8125rem",
+      padding: "0.625rem",
+      fontWeight: 600,
+      lineHeight: "100%",
+      letterSpacing: "0",
+    }}
+  >
+    Correct
+  </button>
+
+  <button
+    type="button"
+    className="btn clickeffect"
+    onClick={onIncorrectClick}
+    style={{
+      flex: 1,
+      borderRadius: "0.3125rem",
+      border: "1px solid #FF3B30",
+      color: status === false ? "white" : "#FF3B30",
+      backgroundColor: status === false ? "#FF3B30" : "#F8E6EA",
+      fontSize: "0.8125rem",
+      fontWeight: 600,
+      padding: "0.625rem",
+      lineHeight: "100%",
+      letterSpacing: "0",
+    }}
+  >
+    Incorrect
+  </button>
+</div>
+
+    </div>
   );
 };

@@ -5,10 +5,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ToastMessage from "./../common/toast-message"
 import { post } from "../common/api";
-import { setClarityTag } from "../../helpers/ms-clarity";
 import useNavigateLogin from "../../helpers/useNavigateLogin";
 import { decryptData, encryptData } from "../common/encryption-decryption";
  import { ZohoLeadApi } from "../common/zoho-lead";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
+import MESSAGES from "../constant/message";
 
 const SearchingUan = () => {
   const navigate = useNavigate();
@@ -20,6 +21,11 @@ const SearchingUan = () => {
   useNavigateLogin()
 
   useEffect(() => {
+    const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
+    if(mobileNumber){
+      mobile_number = mobile_number || mobileNumber;
+    }
+
     fetchUanByMobile();
   }, [])
 
@@ -64,7 +70,11 @@ const SearchingUan = () => {
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: existUser && existUser !== "" ? user?.CheckMyPF_Status : status,
-        CheckMyPF_Intent: user?.CheckMyPF_Intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "", 
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
         ZohoLeadApi(zohoReqData);
@@ -73,13 +83,12 @@ const SearchingUan = () => {
 
   const fetchUanByMobile = async () => {
     try {
-      setClarityTag("BUTTON_CHECK_NOW", "Serching Page");
-
       // call api to fetch UAN by mobile number
-      const response = await post('surepass/fetchUanByMobile', { mobile_number });
+      const response = await post('surepass/fetchUanByMobile', { mobile_number: "" });
 
       // handle response
       if (response && response?.success) {
+        trackClarityEvent(MESSAGES.ClarityEvents.USER_AUTHENTICATED)
         // store user uan 
         localStorage.setItem("user_uan", encryptData(response.data[0].uan))
         if(response?.status === 200 && response.data.length && response.data[0].uan) {

@@ -85,7 +85,7 @@ const PfAnalysisPensionReport = (props: any) => {
       <div className="mt-3">
         {/* pension */}
 
-        <div className=" bg-white px-3 py-3 shadow-sm" style={{borderRadius:"1rem"}}>
+        <div className=" px-3 py-3 shadow-sm" style={{borderRadius:"1rem",backgroundColor: "#F7F9FF",}}>
           <div className="d-flex align-items-center">
             <p className="cardTitle mb-0" style={{ marginLeft: "0.5rem" }}>
               Pension Amount
@@ -172,7 +172,7 @@ const PfAnalysisPensionReport = (props: any) => {
         </div>
 
         {/* Fund ROI Section */}
-        <div className=" bg-white px-3 py-3 mt-3 shadow-sm "style={{borderRadius:"1rem"}}>
+        <div className=" px-3 py-3 mt-3 shadow-sm "style={{borderRadius:"1rem", backgroundColor: "#F7F9FF",}}>
           <div className="d-flex align-items-center">
             <p className="cardTitle mb-0" style={{ marginLeft: "0.5rem" }}>
               Fund ROI

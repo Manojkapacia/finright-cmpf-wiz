@@ -145,7 +145,7 @@ const FundGrowthChart = (props: any) => {
 
 
   return (
-    <div className="bg-white mt-3 px-3 py-3 shadow-sm " style={{borderRadius:"1rem"}}>
+    <div className="mt-3 px-3 py-3 shadow-sm" style={{borderRadius:"1rem",backgroundColor: "#F7F9FF",}}>
       <p className="mb-0 cardTitle">Fund Growth </p>
 
       <div className="d-flex justify-content-center align-items-center mt-3">

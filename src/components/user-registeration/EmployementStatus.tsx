@@ -3,11 +3,12 @@ import "./../../styles/global.css";
 import { CurrentWorkingCompany, PoweredBy, UserRegisterationOtherUanTextContent } from "../../features/user-registration/helpers/ExportingText"
 import { CircularLoading } from "./Loader";
 import { useEffect, useRef, useState } from "react";
-import { get, post } from "../common/api";
+import { get, getForEpfoStatus, post } from "../common/api";
 import ToastMessage from "../common/toast-message";
-import { setClarityTag } from "../../helpers/ms-clarity";
 import { decryptData } from "../common/encryption-decryption";
 import { ZohoLeadApi } from "../common/zoho-lead";
+import MESSAGES from "../constant/message";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
 
 const EmployementStatus = () => {
   const navigate = useNavigate()
@@ -16,7 +17,8 @@ const EmployementStatus = () => {
   const [message, setMessage] = useState({ type: '', content: '' });
   const isMessageActive = useRef(false);
 
-  const { mobile_number,currentEmploymentUanData, processedUan, type } = location.state || {};
+  const { mobile_number,currentEmploymentUanData, processedUan, type, partialPassbook } = location.state || {};
+  
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -73,83 +75,173 @@ const EmployementStatus = () => {
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: status === "Partial Report" ? "Partial Report" : existUser && existUser !== "" ? user?.CheckMyPF_Status : status,
-        CheckMyPF_Intent: user?.CheckMyPF_Intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "", 
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData);
     }
   }
 
-  const handleEmployementClick = async (status: any) => {
-    setClarityTag("BUTTON_EMPLOYEMENT_STATUS", status);
-    setIsLoading(true)
-    const normalized = selectedCompany.trim().toLowerCase();
-    if (["retired", "i am retired"].includes(normalized)) {
-      status = "retired";
-    } else if (normalized === "i am currently not working") {
-      status = "notworking";
-    } else if (normalized === "i have multiple uans") {
-      status = "notlisted";
-    }else if (normalized === "pf not deducted by current employer") {
-      status = "notdeducted";
-    } else {
-      status = "working";
-    }
-    const employeeStatusData = {
-      uan: processedUan,
-      userEmpHistoryCorrect: status === 'working' ? true : false,
-      userStillWorkingInOrganization: status === 'working' ? true : false,
-      currentOrganizationMemberId: status === 'working' ? (type.toLowerCase() != 'full' ? currentEmploymentUanData[0]?.member_id : currentEmploymentUanData[0]?.currentOrganizationMemberId) : "",
-      status,
-      type,
-      userMobileNumber: mobile_number
-    };
-
+ const handleEmployementClick = async (status: any) => {
+  trackClarityEvent(MESSAGES.ClarityEvents.CHOOSE_EMPLOYMENT_STATUS);
+  setIsLoading(true);
+  
+  const navigateToLoginUanWithEpfoCheck = async (statePayload: any) => {
     try {
-      setIsLoading(true);
+      const epfoStatus = await getForEpfoStatus("/epfo/status");
+      if (!epfoStatus?.isAvailable) {
+        setIsLoading(false);
+        navigate("/epfo-down");
+        return;
+      }
+    } catch (err) {
+      console.error("EPFO check failed", err);
+      setIsLoading(false);
+      navigate("/epfo-down");
+      return;
+    }
+
+    setIsLoading(false);
+    navigate('/login-uan', { state: statePayload });
+  };
+
+  const normalized = selectedCompany.trim().toLowerCase();
+  if (["retired", "i am retired"].includes(normalized)) {
+    status = "retired";
+  } else if (normalized === "i am currently not working") {
+    status = "notworking";
+  } else if (normalized === "i have multiple uans") {
+    status = "notlisted";
+  } else if (normalized === "pf not deducted by current employer") {
+    status = "notdeducted";
+  } else {
+    status = "working";
+  }
+
+  const employeeStatusData = {
+    uan: processedUan,
+    userEmpHistoryCorrect: status === 'working',
+    userStillWorkingInOrganization: status === 'working',
+    currentOrganizationMemberId: status === 'working'
+      ? (type.toLowerCase() !== 'full'
+        ? currentEmploymentUanData[0]?.member_id
+        : currentEmploymentUanData[0]?.currentOrganizationMemberId)
+      : "",
+    status,
+    type,
+    userMobileNumber: mobile_number,
+  };
+
+  try {
+    if (type.toLowerCase() !== 'full') {
       
-      if (type.toLowerCase() != 'full') {
-        try {
+      try {
+        if (partialPassbook && partialPassbook.toLowerCase() === 'true') {
+          try {
+            const withdrawabilityCheckUpReportResponse = await post('withdrawability-check', employeeStatusData);
+            if (withdrawabilityCheckUpReportResponse) {
+              setIsLoading(false);
+              trackClarityEvent(MESSAGES.ClarityEvents.PARTIAL_REPORT);
+              zohoUpdateLead("Partial Report");
+              navigate('/dashboard', { state: { mobile_number, processedUan,type:"full" } });
+            } else {
+              await navigateToLoginUanWithEpfoCheck({
+                type: 'full',
+                apiFailure: true,
+                currentUan: processedUan,
+                mobile_number,
+              });
+            }
+          } catch (error) {
+            await navigateToLoginUanWithEpfoCheck({
+              type: 'full',
+              apiFailure: true,
+              currentUan: processedUan,
+              mobile_number,
+            });
+          }
+        } else {
           const passbookResponse = await post('/surepass/getAdvancePassbook', { mobile_number, uan: processedUan });
 
           if (passbookResponse && passbookResponse.success) {
             try {
               const withdrawabilityCheckUpReportResponse = await post('withdrawability-check', employeeStatusData);
               if (withdrawabilityCheckUpReportResponse) {
-                setIsLoading(false)
-                zohoUpdateLead("Partial Report")
-                navigate('/dashboard', { state: { mobile_number, processedUan } })
+                setIsLoading(false);
+                zohoUpdateLead("Partial Report");
+                trackClarityEvent(MESSAGES.ClarityEvents.PARTIAL_REPORT);
+                navigate('/dashboard', { state: { mobile_number, processedUan,type:"full" } });
               } else {
-                setIsLoading(false)
-                navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
+                await navigateToLoginUanWithEpfoCheck({
+                  type: 'full',
+                  apiFailure: true,
+                  currentUan: processedUan,
+                  mobile_number,
+                });
               }
             } catch (error) {
-              setIsLoading(false)
-              navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
+              await navigateToLoginUanWithEpfoCheck({
+                type: 'full',
+                apiFailure: true,
+                currentUan: processedUan,
+                mobile_number,
+              });
             }
           } else {
-            zohoUpdateLead("API down")
-            setIsLoading(false);
-            navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
+            zohoUpdateLead("API down");
+            await navigateToLoginUanWithEpfoCheck({
+              type: 'full',
+              apiFailure: true,
+              currentUan: processedUan,
+              mobile_number,
+            });
           }
-        } catch (error) {
-          // zohoUpdateLead("API down", "None")
-          setIsLoading(false)
-          navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
         }
-      } else {
-        try {
-          const responseUan = await get('/data/fetchByUan/' + processedUan);
-          navigate('/kyc-details', { state: { mobile_number, processedUan, currentUanData: responseUan, currentEmploymentUanData: employeeStatusData, type } })
-        } catch (error) {
-          navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
-        }
+      } catch (error) {
+        await navigateToLoginUanWithEpfoCheck({
+          type: 'full',
+          apiFailure: true,
+          currentUan: processedUan,
+          mobile_number,
+        });
       }
-    } catch (error) {
-      setIsLoading(false);
-      navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: processedUan, mobile_number } })
+    } else {
+      try {        
+        const responseUan = await get('/data/fetchByUan/' + processedUan);
+        trackClarityEvent(MESSAGES.ClarityEvents.SERVICE_HISTORY_FETCHED);
+        setIsLoading(false);
+        navigate('/kyc-details', {
+          state: {
+            mobile_number,
+            processedUan,
+            currentUanData: responseUan,
+            currentEmploymentUanData: employeeStatusData,
+            type,
+          },
+        });
+      } catch (error) {
+        await navigateToLoginUanWithEpfoCheck({
+          type: 'full',
+          apiFailure: true,
+          currentUan: processedUan,
+          mobile_number,
+        });
+      }
     }
+  } catch (error) {
+    await navigateToLoginUanWithEpfoCheck({
+      type: 'full',
+      apiFailure: true,
+      currentUan: processedUan,
+      mobile_number,
+    });
   }
+};
+
 
   
 
@@ -182,6 +274,7 @@ const EmployementStatus = () => {
           <div className="mb-5 pb-5">
             {currentEmploymentUanData?.length > 0 && (
                 <CurrentWorkingCompany
+                  type={type}
                   currentEmploymentUanData={currentEmploymentUanData}
                   onCompanySelect={setSelectedCompany}
                   setIsModalOpen={setIsModalOpen}

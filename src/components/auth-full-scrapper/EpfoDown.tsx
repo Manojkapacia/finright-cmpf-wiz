@@ -3,7 +3,6 @@ import { CustomButton, CustomOutlinedButton } from "../../helpers/helpers"
 import "../styles/UserRegisteration.css"
 import { decryptData } from "../common/encryption-decryption";
 import { useEffect, useState } from "react";
-import { setClarityTag } from "../../helpers/ms-clarity";
 // import { ZohoLeadApi } from "../common/zoho-lead";
 import { useNavigate } from "react-router-dom";
 
@@ -13,7 +12,6 @@ const EpfoDown = () => {
 
   useEffect(() => {
     // zohoUpdateLead("EPFO down");
-    setClarityTag("EPF_SERVICE_NOT_REACHABLE", "EPFO down page");
   }, [])
 
   setTimeout(() => {
@@ -31,7 +29,6 @@ const EpfoDown = () => {
   // };
 
   const handleFullLogin = () => {
-    setClarityTag("BUTTON_FULL_SCRAPPING_LOGIN", "EPFO down page");
     navigate('/login-uan', {state: { type: 'full'}})
   };
   

@@ -3,13 +3,24 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CompleteProfileButton } from "../../../helpers/helpers";
 import { FaCheckCircle } from "react-icons/fa";
 import { BsExclamationCircleFill } from "react-icons/bs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import ConnectEPFOModel from "../../../components/dashboard/Models/ConnectEPFOModel";
 import VanityCard from "../../../components/dashboard/VanityCard/VanityCard";
 import CurrentBalanceModel from "../../../components/dashboard/Models/CurrentBalanceModel";
 import { ZohoLeadApi } from "../../../components/common/zoho-lead";
 import { decryptData } from "../../../components/common/encryption-decryption";
 import CompleteProfileModel from "../../../components/dashboard/Models/CompleteProfileModel";
+import { getForEpfoStatus } from "../../../components/common/api";
+import CallBookedSlider from "../../../components/dashboard/Models/CallBookedModel";
+import { CalendlySlider } from "../../../components/dashboard/Models/CalendlySliderModel";
+import UrgentProfile from "../../../assets/suport-profile.png"
+import InitialCallBookingSlider from "../../../components/dashboard/Models/InitialCallBookingSlider";
+import AfterInitialPaidCallBooking from "../../../components/dashboard/Models/afterInitialPaidCallBooking";
+import AdvancePaidCallBooking from "../../../components/dashboard/Models/advancePaidCallBooking";
+import { formatToISO } from "../../../helpers/dates-convertor";
+import PaymentABTestSlider from "../../../components/dashboard/Models/paymentABTestSlider";
+import { handleCalendlyBooking } from "../../../helpers/calendryBooking";
+import BookingFaildSlider from "../../../components/dashboard/Models/bookingFaildSlider";
 
 const PassboolReport = () => {
     const [showModal, setShowModal] = useState<any>({
@@ -17,29 +28,73 @@ const PassboolReport = () => {
         type: "view report",
     });
 
+    const [showCalendlySlider, setShowCalendlySlider] = useState(false);
+    const [showBookedSlider, setShowBookedSlider] = useState(false);
+    const [calendlyLink, setCalendlyLink] = useState<string | null>(null);
+    const [bookedDate, setBookedDate] = useState<string | null>(null);
+    const [bookedTime, setBookedTime] = useState<string | null>(null);
+    const [assigneeName, setAssigneeName] = useState<string | null>(null);
+    const [lastName, setLastName] = useState<string | null>(null);
+    // const [paymentStatus, setPaymentStatus] = useState("");
+    const [showInitialCallSlider, setShowInitialCallSlider] = useState(false);
+    const [showAfterInitialCallbooking, setShowAfterInitialCallbooking] = useState(false);
+    const [showAdvancePaidCallBooking, setShowAdvancePaidCallBooking] = useState(false);
+    const [showPaymentABTestSlider, setShowPaymentABTestSlider] = useState(false);
+    const [showBookingFaildSlider, setShowBookingFaildSlider]= useState(false)
+
     const navigate = useNavigate();
     const location = useLocation();
 
 
     const currentUanData = location.state?.currentUanData;
     const showAlternate = currentUanData == null;
-
-    // viewdetails
-    const handleViewDetails = async () => {
-        setShowModal({ show: true, type: "connectEpfo" });
-        zohoUpdateLead("Fix Issues");
-        // const userBalance = decryptData(localStorage.getItem("user_balance"))
-        // const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
-        // if (userBalance > 50000) {
-        //     try {
-        //         await post('lead/knowlarity-lead', { mobileNumber, tag: "Fix Issues" });
-        //     } catch (error) {
-        //         console.log(error);
-        //     }
-        // }
+    const [isBookingRes, setIsBookingRes] = useState(false);
+    interface ZohoUpdateLeadParams {
+      tag?: string;
+      status?: string | null;
+      intent?: string | null;
+      intentStatus?: "Scheduled" | "Not Scheduled" | null;
+      callDate?: string | null;
+      callTime?: string | null;
     }
+    useEffect(() => {
+      if (isBookingRes) {
+        zohoUpdateLead({
+          intentStatus: "Scheduled",
+          callDate: bookedDate,
+          callTime: bookedTime
+        });
+      }
+    }, [isBookingRes]);
 
-    const zohoUpdateLead = async (intent: any) => {
+  const handleCalendlyEvent = async (intent?: string) => {
+    zohoUpdateLead({ intent: intent });
+
+    await handleCalendlyBooking({
+      zohoIntent: intent,
+      setBookedDate,
+      setBookedTime,
+      setAssigneeName,
+      setShowBookedSlider,
+      setShowPaymentABTestSlider,
+      setShowInitialCallSlider,
+      setShowAfterInitialCallbooking,
+      setShowAdvancePaidCallBooking,
+      setLastName,
+      setCalendlyLink,
+      setShowCalendlySlider,
+      navigate,
+      setShowBookingFaildSlider
+    });
+  };
+
+
+    const zohoUpdateLead = async ({
+      intent,
+      intentStatus,
+      callDate,
+      callTime
+    }: ZohoUpdateLeadParams) => {
         const rawData = decryptData(localStorage.getItem("lead_data"));
         const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
         const userName = decryptData(localStorage.getItem("user_name"));
@@ -62,11 +117,17 @@ const PassboolReport = () => {
             Mobile: user?.Mobile,
             Email: user?.Email,
             Wants_To: user?.Wants_To,
-            Lead_Status: existUser ? "Reopen" : user?.Lead_Status,
+            Lead_Status: user?.Lead_Status,
             Lead_Source: user?.Lead_Source,
             Campaign_Id: user?.Campaign_Id,
             CheckMyPF_Status: currentUanData?.rawData?.isScrappedFully ? "Full Report" : "Partial Report",
-            CheckMyPF_Intent: intent,
+            CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : (intentStatus === "Scheduled" ? "Scheduled" : "Not Scheduled"),
+      Call_Schedule: intentStatus === "Scheduled" && callDate && callTime
+        ? formatToISO(callDate, callTime)
+        : user.Call_Schedule || "",
             Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
           };
           ZohoLeadApi(zohoReqData);
@@ -94,20 +155,43 @@ const PassboolReport = () => {
     };
 
 
-    const navigateToScrapper = () => {
+  const navigateToScrapper = async () => {
+
+    try {
+      const data = await getForEpfoStatus("/epfo/status");
+      if (data?.isAvailable) {
+        // const isScrappedFully = currentUanData?.rawData?.isScrappedFully;
+        // if(isScrappedFully){
+        //   navigate("/login-uan", {
+        //     state: {
+        //       type: "refresh",
+        //       currentUan: currentUanData?.profileData?.data?.uan,
+        //       mobile_number:
+        //         currentUanData?.profileData?.data?.phoneNumber.replace(/^91/, ""),
+        //         password: currentUanData?.profileData?.data?.password,
+        //       dashboard: true,
+        //     },
+        //   });
+
+        // }
+        // else{
         navigate("/login-uan", {
-            state: {
-                type: "partial",
-                currentUan: currentUanData?.profileData?.data?.uan,
-                mobile_number:
-                    currentUanData?.profileData?.data?.phoneNumber.replace(
-                        /^91/,
-                        ""
-                    ),
-                dashboard:true
-            },
+          state: {
+            type: "refresh",
+            currentUan: currentUanData?.profileData?.data?.uan,
+            mobile_number:
+              currentUanData?.profileData?.data?.phoneNumber.replace(/^91/, ""),
+            dashboard: true,
+          },
         });
-    };
+      // }
+      } else {
+        setShowModal({ show: true, type: "serverDown" });
+      }
+    } catch (err) {
+      setShowModal({ show: true, type: "serverDown" });
+    }
+  };
     const issuesCount = currentUanData?.reportData?.totalIssuesFound?.critical + currentUanData?.reportData?.totalIssuesFound?.medium
     const passbookSharesData = {
         totalAmountWithInterest: currentUanData?.reportData.totalPfBalance || 0,
@@ -121,6 +205,10 @@ const PassboolReport = () => {
         setShowModal({ show: true, type: "currentbalance" });
     }
 
+    
+const handleserverDown =() => {
+    setShowModal({ show: false, type: "serverDown" });
+}
 
     return (
         <>
@@ -151,26 +239,91 @@ const PassboolReport = () => {
           passbookSharesData={passbookSharesData}
         />
       )}
-
-      <div className="to-margin-top pb-1">
+             {showModal.show && showModal.type === "serverDown" && (
+        <CompleteProfileModel
+          setShowModal={setShowModal}
+          onContinue={handleserverDown}
+          headText="EPFO servers are not responding"
+          bodyText="Looks like EPFO servers are currently not responding, please try again after sometime."
+        />
+      )}
+      <div className="to-margin-top pb-1 mt-2">
         <VanityCard
           uan={currentUanData?.rawData?.data?.profile?.UAN}
           fullName={currentUanData?.rawData?.data?.profile?.fullName}
           totalPfBalance={currentUanData?.reportData?.totalPfBalance}
-          lastUpdated={currentUanData?.reportData?.lastContribution?.wageMonth}
+          lastUpdated={currentUanData?.rawData?.meta?.createdTime}
           handleCurrentBalance={handleCurrentBalanceClick}
+          onRefresh={navigateToScrapper}
           handleBack={backPassbook}
           icon={true}
           chevron={true}
         />
       </div>
 
+      <InitialCallBookingSlider
+          show={showInitialCallSlider}
+          onClose={() => setShowInitialCallSlider(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <AfterInitialPaidCallBooking
+          show={showAfterInitialCallbooking}
+          onClose={() => setShowAfterInitialCallbooking(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <AdvancePaidCallBooking
+          show={showAdvancePaidCallBooking}
+          onClose={() => setShowAdvancePaidCallBooking(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <PaymentABTestSlider
+          show={showPaymentABTestSlider}
+          onClose={() => setShowPaymentABTestSlider(false)}
+        />
+
+      {/* Calendly Slider */}
+            {calendlyLink && (
+              <CalendlySlider
+                show={showCalendlySlider}
+                onClose={() => setShowCalendlySlider(false)}
+                calendlyLink={calendlyLink}
+                prefillName={lastName || ""}
+                assigneeName={assigneeName || ""}
+                registeredMobileNumber={decryptData(localStorage.getItem("user_mobile") || "")}
+                onBookingConfirmed={(dbData) => {
+                  setBookedDate(dbData.date);
+                  setBookedTime(dbData.time);
+                  setAssigneeName(dbData.assigneeName);
+                  setShowBookedSlider(true);
+                  setIsBookingRes(true);
+                }}
+              />
+            )}
+      
+            {/* Booked Slider */}
+            <CallBookedSlider
+              show={showBookedSlider}
+              onClose={() => setShowBookedSlider(false)}
+              bookedDate={bookedDate || ""}
+              bookedTime={bookedTime || ""}
+              assignedExpert={assigneeName || "PF Expert"}
+              profileImage={UrgentProfile}
+            />
+              <BookingFaildSlider
+                show={showBookingFaildSlider}
+                onClose={() => setShowBookingFaildSlider(false)}
+                onBookCall={handleCalendlyEvent}
+              />
+
      <div
   className="card border-0 mt-4"
   style={{
-    borderTopLeftRadius: "15px",
-    borderTopRightRadius: "15px",
-    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: "1rem",
+    borderTopRightRadius: "1rem",
+    backgroundColor: "#F7F9FF",
   }}
 >
   <div className="card-body">
@@ -310,7 +463,7 @@ const PassboolReport = () => {
         <CompleteProfileButton
           text="Resolve Issues"
           color="#FF0000"
-          onClick={handleViewDetails}
+          onClick={() => handleCalendlyEvent("Fix Issues")}
         />
       </div>
     )}

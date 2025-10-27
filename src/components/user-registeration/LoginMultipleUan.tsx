@@ -12,20 +12,45 @@ import ToastMessage from "../common/toast-message";
 import "../styles/UserRegisteration.css";
 import { CustomButton, CustomOutlinedButtonWithIcons } from "../../helpers/helpers";
 import React from "react";
-import { setClarityTag } from "../../helpers/ms-clarity";
 import { decryptData } from "../common/encryption-decryption";
 import { ZohoLeadApi } from "../common/zoho-lead";
+import { get, getForEpfoStatus } from "../common/api";
+import CompleteProfileModel from "../dashboard/Models/CompleteProfileModel";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
+import MESSAGES from "../constant/message";
+import EmployementStatusModel from "../dashboard/Models/employementStatusModel";
 
 const LoginMultipleUan = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [message, setMessage] = useState({ type: "", content: "" });
   const isMessageActive = useRef(false);
-
+  const [showModal, setShowModal] = useState<any>({
+      show: false,
+      type: "view report",
+    });
   const { uanListItems, mobile_number } = location.state || {};
+  const [showEmploymentStatusModal, setShowEmploymentStatusModal] = useState(false);
+  const [selectedModalData, setSelectedModalData] = useState<ModalData | null>(null);
+  const [checkEpfoStatus, setCheckEpfoStatus] = useState(false);
 
+  interface ModalData {
+    mobile_number: string;
+    processedUan: string;
+    currentEmploymentUanData: any;
+    type: string;
+    partialPassbook: any;
+  }
+
+  if (Array.isArray(uanListItems) && uanListItems.length > 0) {
+    trackClarityEvent(MESSAGES.ClarityEvents.UAN_FOUND);
+  } else {
+    trackClarityEvent(MESSAGES.ClarityEvents.UAN_NOT_FOUND);
+  }  
+  
   useEffect(() => {
     // call zoho api
+    getToggleValue();
     setTimeout(() => {
       if(uanListItems.length === 0){
         zohoUpdateLead()
@@ -44,17 +69,64 @@ const LoginMultipleUan = () => {
     }
   }, [message]);
 
+  const getToggleValue = async () => {
+      try {
+        const response = await get("/data/toggle/keys");
+        const epfoStatusToggal = response?.allTogglers?.find((item:any) => item.type === "epfo_status");
+        setCheckEpfoStatus(epfoStatusToggal?.isEnabled)
+      } catch (err) { }
+    }
+
   const handleContinueClick = async () => {
-    if (uanListItems.length && uanListItems[0]?.employment_history?.length) {
-      navigate("/employment-status", { state: { mobile_number, processedUan: uanListItems[0]?.uan, currentEmploymentUanData: uanListItems[0]?.employment_history, type: 'partial' } });
+    if (!checkEpfoStatus) {
+      navigate("/epfo-down")
     } else {
-      navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: uanListItems[0]?.uan, mobile_number } })
+      if (uanListItems.length && uanListItems[0]?.employment_history?.length) {
+        setShowEmploymentStatusModal(true);
+        setSelectedModalData({
+          mobile_number,
+          processedUan: uanListItems[0]?.uan,
+          currentEmploymentUanData: uanListItems[0]?.employment_history,
+          type: 'partial',
+          partialPassbook: uanListItems[0]?.isPassbook
+        });
+        // navigate("/employment-status", { state: { mobile_number, processedUan: uanListItems[0]?.uan, currentEmploymentUanData: uanListItems[0]?.employment_history, type: 'partial', partialPassbook: uanListItems[0]?.isPassbook } });
+      } else {
+        try {
+          const data = await getForEpfoStatus("/epfo/status");
+          if (data?.isAvailable) {
+            navigate('/login-uan', { state: { type: 'full', apiFailure: true, currentUan: uanListItems[0]?.uan, mobile_number } })
+          } else {
+            setShowModal({ show: true, type: "serverDown" });
+          }
+        } catch (err) {
+          setShowModal({ show: true, type: "serverDown" });
+        }
+      }
     }
   }
 
-  const handleLoginClick = () => {
-    setClarityTag("BUTTON_LOGIN_PASSWORD", "When no UAN found link mobile number");
-    navigate("/login-uan", { state: { type: "full", mobile_number } });
+
+const handleserverDown =() => {
+    setShowModal({ show: false, type: "serverDown" });
+        navigate('/how-can-help')
+}
+
+  const handleLoginClick = async () => {
+    if (!checkEpfoStatus) {
+      navigate("/epfo-down")
+    } else {
+      try {
+        const data = await getForEpfoStatus("/epfo/status");
+        if (data?.isAvailable) {
+          navigate("/login-uan", { state: { type: "full", mobile_number } });
+        } else {
+          setShowModal({ show: true, type: "serverDown" });
+        }
+      } catch (err) {
+        setShowModal({ show: true, type: "serverDown" });
+      }
+    }
   };
 
   const handlePfExpertClick = () => {
@@ -102,7 +174,11 @@ const LoginMultipleUan = () => {
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: uanListItems.length > 0 ? user?.CheckMyPF_Status : "Authenticated User - No UAN Found",
-        CheckMyPF_Intent : user?.CheckMyPF_Intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "", 
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData)
@@ -112,6 +188,14 @@ const LoginMultipleUan = () => {
   return (
     <>
       {message.type && <ToastMessage message={message.content} type={message.type} />}
+        {showModal.show && showModal.type === "serverDown" && (
+        <CompleteProfileModel
+          setShowModal={setShowModal}
+          onContinue={handleserverDown}
+          headText="EPFO servers are not responding"
+          bodyText="Looks like EPFO servers are currently not responding, please try again after sometime."
+        />
+      )}
       <div
         className="min-vh-100  d-flex flex-column"
       >
@@ -257,6 +341,14 @@ const LoginMultipleUan = () => {
           </>
         )}
       </div>
+
+      {/* Show Modal */}
+      {showEmploymentStatusModal && selectedModalData && (
+        <EmployementStatusModel
+          setShowModal={setShowEmploymentStatusModal}
+          modalData={selectedModalData}
+        />
+)}
     </>
   );
 };

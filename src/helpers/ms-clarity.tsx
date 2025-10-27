@@ -23,25 +23,56 @@
 // }
 
 
+// import clarity from "@microsoft/clarity";
+
+// export const initClarity = () => {
+//   if (window.location.hostname === "uat.finright.in") {
+//     clarity.init("qs1p34z4yw");
+//   }
+// };
+
+// export const identifyUser = (userId: string) => {
+//   if (typeof window.clarity === "function") {
+//     console.log("user id",userId);
+    
+//     window.clarity("identify", userId);
+//   }
+// };
+
+// export const setClarityTag = (key: string, value: string | string[]) => {
+//   if (typeof window.clarity === "function") {
+//     console.log("user id",key, value);
+//     window.clarity("set", key, value);
+//   }
+// };
 import clarity from "@microsoft/clarity";
 
+// Avoid multiple inits
+let clarityInitialized = false;
+
+// Hardcoded Project ID
+const CLARITY_PROJECT_ID = "nwy8jk3yx1";
+
+// Initialize Clarity
 export const initClarity = () => {
-  if (window.location.hostname === "uat.finright.in") {
-    clarity.init("qs1p34z4yw");
+  if (!clarityInitialized) {
+    clarity.init(CLARITY_PROJECT_ID);
+    clarityInitialized = true;
   }
 };
 
-export const identifyUser = (userId: string) => {
-  if (typeof window.clarity === "function") {
-    console.log("user id",userId);
-    
-    window.clarity("identify", userId);
+// Identify user by mobile number
+export const identifyUser = (mobileNumber: string) => {
+  initClarity();
+  if (typeof window.clarity === "function" && mobileNumber) {
+    window.clarity("identify", mobileNumber);
   }
 };
 
-export const setClarityTag = (key: string, value: string | string[]) => {
-  if (typeof window.clarity === "function") {
-    console.log("user id",key, value);
-    window.clarity("set", key, value);
+// Track a specific event
+export const trackClarityEvent = (eventName: string) => {
+  initClarity();
+  if (typeof window.clarity === "function" && eventName) {
+    window.clarity("set", "event", eventName);
   }
 };

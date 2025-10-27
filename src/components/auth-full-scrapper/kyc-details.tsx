@@ -1,31 +1,147 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styles from './styles/kyc.module.css'
-import { FaCheckCircle } from 'react-icons/fa';
-import { RxCrossCircled } from 'react-icons/rx';
-import { setClarityTag } from '../../helpers/ms-clarity';
 import "../../App.css"
+import { KycProfileCard } from '../../helpers/helpers';
+import { decryptData, encryptData } from '../common/encryption-decryption';
+import { post } from '../common/api';
+import { CircularLoading } from '../user-registeration/Loader';
+import ToastMessage from '../common/toast-message';
 function KycDetails() {
     const location = useLocation();
     const navigate = useNavigate()
-    const [showContinueButton, setShowContinueButton] = useState(false);
-    const [showCheckbox, setShowCheckbox] = useState(false);
     const [message, setMessage] = useState({ type: "", content: "" });
     const isMessageActive = useRef(false);
 
-    const { mobile_number, processedUan, currentUanData, currentEmploymentUanData, type } = location.state || {};
-    const [kycStatus, setKycStatus] = useState({
+    const { mobile_number, processedUan, currentUanData, currentEmploymentUanData, uanLinkedPhoneNumber='' } = location.state || {};
+    
+    // const { currentUanData } = location.state || {};
+
+    type KycField =
+        | 'fullName'
+        | 'gender'
+        | 'fatherHusbandName'
+        | 'physicallyHandicapped'
+        | 'bankAccountNumber'
+        | 'dateOfBirth'
+        | 'pan'
+        | 'bankIFSC';
+    const [kycStatus, setKycStatus] = useState<Record<KycField, boolean>>({
         fullName: true,
         gender: true,
         fatherHusbandName: true,
         physicallyHandicapped: true,
         bankAccountNumber: true,
-        UAN: true,
         dateOfBirth: true,
-        aadhaar: true,
         pan: true,
-        ifscNumber: true
+        bankIFSC: true,
     });
+    const [kycStatus1, setKycStatus1] = useState<Record<KycField, boolean | null>>({
+        fullName: null,
+        gender: null,
+        fatherHusbandName: null,
+        physicallyHandicapped: false,
+        bankAccountNumber: null,
+        dateOfBirth: null,
+        pan: null,
+        bankIFSC: null,
+    });
+    
+    const [isLoading, setIsLoading] = useState(false)
+    
+    const excludedFields: KycField[] = ['bankIFSC', 'bankAccountNumber', 'pan'];
+    const excludedFieldsForPan: KycField[] = ['fullName', 'gender', 'fatherHusbandName','physicallyHandicapped','dateOfBirth'];
+
+    
+    const isAllNullExceptExcluded = Object.entries(kycStatus1)
+    .filter(([key]) => !excludedFields.includes(key as KycField))
+    .some(([, value]) => value === null);
+    
+    const isAllNullExceptExcludedForPan = Object.entries(kycStatus1)
+    .filter(([key]) => !excludedFieldsForPan.includes(key as KycField))
+    .some(([, value]) => value === null);
+
+    const handleCorrectClick = (field: any) => {
+        setKycStatus1((prev) => ({ ...prev, [field]: true }));
+    };
+
+    const handleIncorrectClick = (field: any) => {
+        setKycStatus1((prev) => ({ ...prev, [field]: false }));
+    };
+
+
+useEffect(() => {
+  const initialStatus: Record<KycField, boolean> = {
+    fullName: true,
+    gender: true,
+    fatherHusbandName: true,
+    physicallyHandicapped: true,
+    bankAccountNumber: true,
+    dateOfBirth: true,
+    pan: true,
+    bankIFSC: true,
+  };
+
+  const tempStatus1: Record<KycField, boolean | null> = {
+    fullName: null,
+    gender: null,
+    fatherHusbandName: null,
+    physicallyHandicapped: null,
+    bankAccountNumber: null,
+    dateOfBirth: null,
+    pan: null,
+    bankIFSC: null,
+  };
+
+  const checkValue = (value: any) =>
+    value !== undefined &&
+    value !== null &&
+    value !== '' &&
+    value !== '-' &&
+    value.toUpperCase?.() !== 'N/A' &&
+    value.toUpperCase?.() !== 'NA';
+
+  const profile = currentUanData?.rawData?.data?.profile;
+  const basicDetails = profile?.basicDetails;
+  const kycDetails = profile?.kycDetails;
+
+  (Object.keys(initialStatus) as KycField[]).forEach((field) => {
+    let value: any;
+
+    if (field === 'fullName') {
+      value = profile?.fullName;
+    } else if (field === 'pan') {
+      value = kycDetails?.pan;
+    } else {
+      value = basicDetails?.[field];
+    }
+
+    const isValid = checkValue(value);
+    initialStatus[field] = isValid;
+
+    //  Only update kycStatus1 if the field is invalid
+    if (!isValid) {
+      tempStatus1[field] = false;
+    }
+  });
+
+  //  Special handling for bankAccountNumber & bankIFSC
+  const bankAccount = kycDetails?.bankAccountNumber;
+  const ifsc = kycDetails?.bankIFSC;
+
+  const isBankValid = checkValue(bankAccount);
+  const isIFSCValid = checkValue(ifsc);
+
+  initialStatus.bankAccountNumber = isBankValid;
+  initialStatus.bankIFSC = isIFSCValid;
+
+   tempStatus1.bankAccountNumber = !isBankValid ? isBankValid : null;
+   tempStatus1.bankIFSC = !isIFSCValid ? isIFSCValid : null;
+
+  // Set state
+  setKycStatus(initialStatus);
+  setKycStatus1(tempStatus1);
+}, [currentUanData]);
+
 
     useEffect(() => {
         if (message.type) {
@@ -47,302 +163,255 @@ function KycDetails() {
 
     const maskPanNumber = (number: any) => {
         if (number) {
-            const lastFourDigits = number.slice(-4);
+            const lastFourDigits = number.slice(-5);
             return `XXXXXX${lastFourDigits}`;
         }
     };
 
-    const handleIncorrect = () => {
-        setClarityTag("BUTTON_INCURRECT", "Inside Kyc page Basic details");
-        const fieldsToCheck = ['fullName', 'gender', 'fatherHusbandName', 'physicallyHandicapped', 'UAN', 'dateOfBirth', 'aadhaar', 'pan'];
-        setKycStatus((prev) => {
-            const updatedStatus: any = { ...prev };
-            fieldsToCheck.forEach((field) => {
-                if (field === 'UAN') {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                } else if (field === 'aadhaar' || field === 'pan') {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.kycDetails?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                } else {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.basicDetails?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                }
-            });
-            return updatedStatus;
-        });
-        setShowCheckbox(true)
-        setShowContinueButton(true);
+
+
+    const isValidValue = (value: any) => {
+        if (!value) return false; // null, undefined, empty string
+        const trimmed = value.trim().toUpperCase();
+        return trimmed !== 'NA' && trimmed !== 'N/A' && trimmed !== '-' && trimmed !== '--' && trimmed !== '';
     };
 
-    const handleCorrect = () => {
-        setClarityTag("BUTTON_CURRECT", "Inside Kyc page Basic details");
-        const fieldsToCheck = ['fullName', 'gender', 'fatherHusbandName', 'physicallyHandicapped', 'bankAccountNumber', 'UAN', 'dateOfBirth', 'aadhaar', 'pan', "IFSC"];
-        setKycStatus((prev) => {
-            const updatedStatus: any = { ...prev };
-            fieldsToCheck.forEach((field) => {
-                if (field === 'UAN') {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                } else if (field === 'aadhaar' || field === 'pan') {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.kycDetails?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                } else {
-                    if (["-", "N/A", ""].includes(currentUanData?.rawData?.data?.profile?.basicDetails?.[field])) {
-                        updatedStatus[field] = false;
-                    }
-                }
-            });
-            return updatedStatus;
-        });
-        setShowContinueButton(false);
-        navigate('/kyc-details/bank', { state: { mobile_number, processedUan, currentUanData, currentEmploymentUanData, type, kycStatus } })
 
+
+
+    const [step, setStep] = useState(1);
+    const [stepStatus, setStepStatus] = useState({ step1: 'orange', step2: 'grey' });
+    const getStabberClass = (stabberStep: any) => {
+        const color = stabberStep === 1 ? stepStatus.step1 : stepStatus.step2;
+        return `stabber ${color}`;
+    };
+    const handleNextButton = () => {
+        setStep(2);
+        setStepStatus({ step1: 'green', step2: 'orange' });
     }
 
-    const handleCheckboxChange = (field: any) => {
-        setKycStatus((prev: any) => ({
-            ...prev,
-            [field]: !prev[field],
-        }));
-    };
-
-    const handleContinueBtn = () => {
-        setClarityTag("BUTTON_CONTINUE", "Inside Kyc page Basic details");
-        navigate('/kyc-details/bank', { state: { mobile_number, processedUan, currentUanData, currentEmploymentUanData, type, kycStatus } })
-    };
-
+    const handleCompleteButton = async () => {
+        setStepStatus((prev) => ({ ...prev, step2: 'green' }));
+        localStorage.setItem("is_scrapped_fully", encryptData("true"))
+        setTimeout(() => {
+            setIsLoading(true)
+        }, 1000);
+        const mergedStatues = { ...kycStatus1 }
+        const dataToSend = currentEmploymentUanData?.length ? { kycStatus: mergedStatues, type: 'full', uan: processedUan, userMobileNumber: mobile_number, ...currentEmploymentUanData[0] } : { kycStatus: mergedStatues, type: 'full', uan: processedUan, userMobileNumber: mobile_number, ...currentEmploymentUanData, uanLinkedPhoneNumber }
+        try {
+            const withdrawabilityCheckUpReportResponse = await post('withdrawability-check', dataToSend);
+            if (withdrawabilityCheckUpReportResponse) {
+                // setTimeout(() => {
+                    setIsLoading(false)
+                    navigate('/dashboard', { state: { mobile_number, processedUan: processedUan ? processedUan : decryptData(localStorage.getItem("user_uan")), type:"null" } })
+                // }, 2000);
+            } else {
+                setIsLoading(false)
+                navigate('/epfo-down')
+                setMessage({ type: 'error', content: "Oops!! Some issue processing RULE ENGINE at moment!!" })
+            }
+        } catch (error: any) {
+            setIsLoading(false)
+            navigate('/epfo-down')
+            setMessage({ type: 'error', content: "Oops!! Some issue processing RULE ENGINE at moment!!" })
+        }
+    }
     return (
-        <div className="container pt-5 to-margin-top" >
-            <div className="row d-flex justify-content-center align-items-center">
-                <div className="col-lg-6 col-md-8">
+        <>
+            {isLoading && <CircularLoading />}
+            {message.type && <ToastMessage message={message.content} type={message.type} />}
+            {!isLoading &&
+                <div className="container-fluid to-margin-top">
                     <div className="row">
-                        <div className="col-md-12 text-center">
-                            <span className={`${styles.kycHeading} d-flex justify-content-center`}>
-                                {showCheckbox
-                                    ? 'Select details that don’t match'
-                                    : 'Do these details match your Aadhaar and PAN Card?'}
-                            </span>
-                        </div>
-                    </div>
+                        <div className="col-md-4 offset-md-4" style={{ backgroundColor: '#E6ECFF', minHeight: '94.5vh', position: 'relative' }}>
 
-                    <div className="row mt-lg-5 mt-3">
-                        <div className="col-md-10 offset-md-1">
-                            <div className="card shadow-sm mx-lg-5">
-                                <div className="card-body">
-                                    <div className="row">
-                                        <div className="col-md-6 px-3">
-                                            <div className="mb-2">
-                                                <label className="cardTitle">Name</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.fullName || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('fullName')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.fullName}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                            {/* Stabber Progress Row */}
+                            <div className="stabber-row mt-4 pt-2">
+                                <div className="stabber-bar-container">
+                                    <div className={getStabberClass(1)}></div>
+                                </div>
+                                <div className="stabber-bar-container">
+                                    <div className={getStabberClass(2)}></div>
+                                </div>
+                            </div>
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">UAN Number:</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.UAN || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('UAN')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.UAN}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                            {/* Step Heading */}
+                            <h5 style={{ fontSize: '1.125rem', fontWeight: 500 }} className="mb-4">
+                                {step === 1 ? 'Step 1: Verify KYC as per Aadhar Card' : 'Step 2: Verify PAN and Bank details'}
+                            </h5>
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">
-                                                    {currentUanData?.rawData?.data?.profile?.basicDetails?.relation === 'F'
+                            {/* KYC View */}
+                            {step === 1 ? (
+                                <div>
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.fullName) &&
+                                        (kycStatus.fullName) && (
+                                            <KycProfileCard
+                                                label="Name"
+                                                name={currentUanData.rawData.data.profile.fullName}
+                                                onCorrectClick={() => handleCorrectClick('fullName')}
+                                                onIncorrectClick={() => handleIncorrectClick('fullName')}
+                                                status={kycStatus1.fullName}
+                                            />
+                                        )}
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.basicDetails?.relation) &&
+                                        (kycStatus.fatherHusbandName) && (
+                                            <KycProfileCard
+                                                label={
+                                                    currentUanData.rawData.data.profile.basicDetails.relation === 'F'
                                                         ? "Father's Name"
-                                                        : "Husband's Name"}
-                                                </label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.basicDetails?.fatherHusbandName || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('fatherHusbandName')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.fatherHusbandName}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                                                        : "Husband's Name"
+                                                }
+                                                name={
+                                                    currentUanData.rawData.data.profile.basicDetails.fatherHusbandName || '--'
+                                                }
+                                                onCorrectClick={() => handleCorrectClick('fatherHusbandName')}
+                                                onIncorrectClick={() => handleIncorrectClick('fatherHusbandName')}
+                                                status={kycStatus1.fatherHusbandName}
+                                            />
+                                        )}
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">Gender</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.basicDetails?.gender
-                                                            ? currentUanData?.rawData?.data?.profile?.basicDetails?.gender === 'M'
-                                                                ? 'Male'
-                                                                : 'Female'
-                                                            : '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('gender')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.gender}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.basicDetails?.gender) &&
+                                        (kycStatus.gender) && (
+                                            <KycProfileCard
+                                                label="Gender"
+                                                name={
+                                                    currentUanData.rawData.data.profile.basicDetails.gender === 'M'
+                                                        ? 'Male'
+                                                        : 'Female'
+                                                }
+                                                onCorrectClick={() => handleCorrectClick('gender')}
+                                                onIncorrectClick={() => handleIncorrectClick('gender')}
+                                                status={kycStatus1.gender}
+                                            />
+                                        )}
+
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.basicDetails?.physicallyHandicapped) &&
+                                        (kycStatus.physicallyHandicapped) && (
+                                            <KycProfileCard
+                                                label="Physically Handicapped"
+                                                name={
+                                                    currentUanData.rawData.data.profile.basicDetails.physicallyHandicapped === 'N'
+                                                        ? 'No'
+                                                        : 'Yes'
+                                                }
+                                                onCorrectClick={() => handleCorrectClick('physicallyHandicapped')}
+                                                onIncorrectClick={() => handleIncorrectClick('physicallyHandicapped')}
+                                                status={kycStatus1.physicallyHandicapped}
+                                            />
+                                        )}
+
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.basicDetails?.dateOfBirth) &&
+                                        (kycStatus.dateOfBirth) && (
+                                            <KycProfileCard
+                                                label="Date of Birth"
+                                                name={currentUanData.rawData.data.profile.basicDetails.dateOfBirth}
+                                                onCorrectClick={() => handleCorrectClick('dateOfBirth')}
+                                                onIncorrectClick={() => handleIncorrectClick('dateOfBirth')}
+                                                status={kycStatus1.dateOfBirth}
+                                            />
+                                        )}
+                                        <div className='mb-4 pt-3'>
+
+                                    <button
+                                        className={`${isAllNullExceptExcluded ? "null" : "clickeffect"}`}
+                                        onClick={handleNextButton}
+                                        disabled={isAllNullExceptExcluded}
+                                        style={{
+                                            backgroundColor: "#00124F",
+                                            borderRadius: "0.3125rem",
+                                            width: "100%",
+                                            color: "white",
+                                            border: "none",
+                                            padding: "0.625rem",
+                                            fontSize: "0.8125rem",
+                                            fontWeight: "600",
+                                            cursor: isAllNullExceptExcluded ? "not-allowed" : "pointer",
+                                            opacity: isAllNullExceptExcluded ? 0.6 : 1
+                                        }}
+                                    >
+                                        Next
+                                    </button>
                                         </div>
 
-                                        <div className="col-md-6 px-3">
-                                            <div className="mb-2">
-                                                <label className="cardTitle">Physically Handicapped:</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.basicDetails?.physicallyHandicapped
-                                                            ? currentUanData?.rawData?.data?.profile?.basicDetails?.physicallyHandicapped === 'N'
-                                                                ? 'No'
-                                                                : 'Yes'
-                                                            : '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('physicallyHandicapped')}
-                                                            className="form-check-input"
-                                                            type="checkbox"
-                                                            checked={!kycStatus.physicallyHandicapped}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                                </div>
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">Date of Birth:</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {currentUanData?.rawData?.data?.profile?.basicDetails?.dateOfBirth || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('dateOfBirth')}
-                                                            className="form-check-input"
-                                                            type="checkbox"
-                                                            checked={!kycStatus.dateOfBirth}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                            ) : (
+                                <div>
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">Aadhaar Number:</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {maskAdharNumber(currentUanData?.rawData?.data?.profile?.kycDetails?.aadhaar) || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('aadhaar')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.aadhaar}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.kycDetails?.pan) &&
+                                        (kycStatus.pan) && (
+                                            <KycProfileCard
+                                                label="PAN Number"
+                                                name={maskPanNumber(currentUanData.rawData.data.profile.kycDetails.pan)}
+                                                onCorrectClick={() => handleCorrectClick('pan')}
+                                                onIncorrectClick={() => handleIncorrectClick('pan')}
+                                                status={kycStatus1.pan}
+                                            />
+                                        )}
 
-                                            <div className="mb-2">
-                                                <label className="cardTitle">PAN Number:</label>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <p className="cardBody form-check-label mb-0">
-                                                        {maskPanNumber(currentUanData?.rawData?.data?.profile?.kycDetails?.pan) || '--'}
-                                                    </p>
-                                                    {showCheckbox && (
-                                                        <input
-                                                            onChange={() => handleCheckboxChange('pan')}
-                                                            className={`${styles.changeCheckbox} form-check-input`}
-                                                            type="checkbox"
-                                                            checked={!kycStatus.pan}
-                                                            style={{ transform: 'scale(1.5)' }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.kycDetails?.bankAccountNumber) &&
+                                        (kycStatus.bankAccountNumber) && (
+                                            <KycProfileCard
+                                                label="Bank A/C Number"
+                                                name={maskAdharNumber(currentUanData.rawData.data.profile.kycDetails.bankAccountNumber)}
+                                                onCorrectClick={() => handleCorrectClick('bankAccountNumber')}
+                                                onIncorrectClick={() => handleIncorrectClick('bankAccountNumber')}
+                                                status={kycStatus1.bankAccountNumber}
+                                            />
+                                        )}
+
+                                    {isValidValue(currentUanData?.rawData?.data?.profile?.kycDetails?.bankIFSC) &&
+                                        (kycStatus.bankIFSC) && (
+                                            <KycProfileCard
+                                                label="IFSC Number"
+                                                name={maskAdharNumber(currentUanData.rawData.data.profile.kycDetails.bankIFSC)}
+                                                onCorrectClick={() => handleCorrectClick('bankIFSC')}
+                                                onIncorrectClick={() => handleIncorrectClick('bankIFSC')}
+                                                status={kycStatus1.bankIFSC}
+                                            />
+                                        )}
+
+                                    <div 
+                                    className='mb-4'
+                                    style={{
+                                        position: "absolute",
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        padding: "1rem",
+                                        backgroundColor: "#E6ECFF"
+                                    }}>
+                                        <button
+                                            className={`${isAllNullExceptExcludedForPan ? "null" : "clickeffect"}`}
+                                            onClick={handleCompleteButton}
+                                            disabled={isAllNullExceptExcludedForPan}
+                                            style={{
+                                                backgroundColor: "#00124F",
+                                                borderRadius: "0.3125rem",
+                                                width: "100%",
+                                                color: "white",
+                                                border: "none",
+                                                padding: "0.625rem",
+                                                fontSize: "0.8125rem",
+                                                fontWeight: "600",
+                                                cursor: isAllNullExceptExcludedForPan ? "not-allowed" : "pointer",
+                                                opacity: isAllNullExceptExcludedForPan ? 0.6 : 1
+                                            }}          
+                                        >
+                                            Complete
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
+                </div>}
+        </>
 
-                    {!showContinueButton && (
-                        <div className="col-md-10 offset-md-1">
-                            <div className="row mt-4 mb-3 mt-lg-5 mx-lg-3">
-                                <div className="col-md-6 col-sm-6">
-                                    <button
-                                        className={`${styles.incorrectButton} btn w-100 py-lg-3 py-2 d-flex align-items-center justify-content-center`}
-                                        onClick={handleIncorrect}
-                                    >
-                                        <RxCrossCircled size={17} className="me-2 text-danger" />
-                                        No
-                                    </button>
-                                </div>
-                                <div className="col-md-6 col-sm-6 mt-3 mt-sm-0">
-                                    <button
-                                        className={`${styles.correctButton} btn w-100 py-lg-3 py-2 d-flex align-items-center justify-content-center`}
-                                        onClick={handleCorrect}
-                                    >
-                                        <FaCheckCircle size={17} className="me-2 text-success" />
-                                        Yes, They Match
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showContinueButton && (
-                        <div className="row mt-4 mt-lg-5 mb-3">
-                            <div className="col-md-4 offset-md-4">
-                                <button
-                                    className={`${styles.correctButton} btn w-100 py-lg-3 py-2`}
-                                    onClick={handleContinueBtn}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-            </div>
-        </div>
     );
+
+
 }
+
 
 export default KycDetails;

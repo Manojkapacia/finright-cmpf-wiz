@@ -21,13 +21,19 @@ const TabComponent = (props: any) => {
       id: "pf-report",
       label: "PF Report",
       icon: <HiOutlineDocumentCheck />,
-      component: <PfReport currentUanData={props?.currentUanData} />,
+      component: <PfReport scrapingStatus={props?.scrapingStatus} type={props?.type} currentUanData={props?.currentUanData} setScrapingStatus={props?.setScrapingStatus} 
+      otpHandling={props?.otpHandling} />,
     },
     {
       id: "passbook",
       label: "Passbook",
       icon: <CiMoneyCheck1 />,
-      component: <PassbookForPF currentUanData={props?.currentUanData} />,
+      component: <PassbookForPF currentUanData={props?.currentUanData} 
+      scrapingStatus={props?.scrapingStatus}
+      type={props?.type}
+      setScrapingStatus={props?.setScrapingStatus}
+      otpHandling={props?.otpHandling}
+       />,
     },
   ];
 
@@ -40,13 +46,14 @@ const TabComponent = (props: any) => {
 
       {/* Fixed Bottom Tab Navigation */}
       <div
-        className="d-flex p-2 rounded-pill bg-white shadow-lg position-fixed"
+        className="d-flex p-2 rounded-pill  shadow-lg position-fixed"
         style={{
           bottom: "0.625rem",
           left: "50%",
           transform: "translateX(-50%)",
           width: "17rem",
           height: "3.4375rem",
+          backgroundColor: "#F7F9FF",
           justifyContent: "space-between",
           opacity: 0.95,
           borderRadius: "6.25rem",
@@ -64,7 +71,7 @@ const TabComponent = (props: any) => {
               marginTop: activeTab === tab.id ? "-0.4rem" : "-0.4rem",
               marginLeft: activeTab === tab.id ? "-0.4rem" : "-0.4rem",
               marginRight: activeTab === tab.id ? "-0.4rem" : "-0.4rem",
-
+              border:"none",
               padding: "0.5rem",
               transition: "all 0.3s ease-in-out",
               boxShadow:
@@ -72,23 +79,6 @@ const TabComponent = (props: any) => {
                   ? "0rem 0.5rem 1rem rgba(0, 18, 79, 0.4)"
                   : "none",
             }}
-            // onClick={() => setActiveTab(tab.id)}
-            // onClick={() => {
-            //     setActiveTab(tab.id);
-            //     window.scrollTo({ top: 0, behavior: "smooth" });
-            //   }}
-            // onClick={() => {
-            //   if (activeTab !== tab.id) {
-            //     setActiveTab(tab.id);
-            //     window.scrollTo({ top: 0, behavior: "smooth" });
-            //   }
-            // }}
-            // onClick={() => {
-            //     if (activeTab !== tab.id) {
-            //         setActiveTab(tab.id);
-            //         document.getElementById("tabContent")?.scrollTo({ top: 0, behavior: "smooth" });
-            //     }
-            // }}
             onClick={() => {
               setActiveTab(tab.id);
               window.scrollTo({ top: 0, behavior: "smooth" });

@@ -8,12 +8,14 @@ interface CompleteProfileModelProps {
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
   onContinue: () => void;
   bodyText?:string;
+  headText?:string;
 }
 
 const CompleteProfileModel: React.FC<CompleteProfileModelProps> = ({
   setShowModal,
   onContinue,
-  bodyText
+  headText,
+  bodyText,
 }) => {
   const handleClose = () => {
     setShowModal(false);
@@ -88,9 +90,10 @@ const CompleteProfileModel: React.FC<CompleteProfileModelProps> = ({
               fontSize: "1.125rem",
               fontWeight: 400,
               marginBottom: "0.5rem",
+              color:headText ? "#FF0000":"null",
             }}
           >
-            Your Profile Is Not Completed
+           {headText ? headText : "Your Profile Is Not Completed"}
           </p>
           <p
             style={{
@@ -110,7 +113,7 @@ const CompleteProfileModel: React.FC<CompleteProfileModelProps> = ({
             className="mt-3 mb-2 w-100"
           >
             <CompleteProfileButton
-              text="Complete Profile Now"
+              text={headText? "Ok":"Complete Profile Now"}
               onClick={onContinue}
             />
           </motion.div>

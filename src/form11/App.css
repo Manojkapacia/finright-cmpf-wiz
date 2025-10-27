@@ -1,0 +1,26 @@
+.custom-bottom-shadow {
+  box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.5);
+}
+
+.custom-input {
+  border: 1px solid #85858599 !important;
+  color: #000;
+  background-color: #F7F9FF !important;
+}
+
+.custom-input::placeholder {
+  color: #85858599 !important;
+  opacity: 1;
+  background-color: #F7F9FF !important;
+}
+
+.custom-input:focus {
+  border-color: #85858599 !important;
+  box-shadow: none !important;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}

@@ -6,13 +6,13 @@ import {
 import { CircularLoading } from "./Loader";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { post } from "../common/api";
+import { get, post } from "../common/api";
 import "../styles/UserRegisteration.css"
 import { decryptData, encryptData } from "../common/encryption-decryption";
 import ToastMessage from "../common/toast-message";
-import { setClarityTag } from "../../helpers/ms-clarity";
 import { ZohoLeadApi } from "../common/zoho-lead";
 import MESSAGES from "../constant/message";
+import { identifyUser, trackClarityEvent } from "../../helpers/ms-clarity";
 
 const initialTime = 60;
 
@@ -28,7 +28,7 @@ const EnterOtp = () => {
   const isMessageActive = useRef(false);
   const [mobileNumber, setMobileNumber] = useState<any>();
   const [, setZohoUserID] = useState<any>();
-
+identifyUser
   useEffect(() => {
     if (seconds <= 0) return;
 
@@ -103,6 +103,11 @@ const EnterOtp = () => {
     const appendMobileNumber = "+91" + extractedMobile;
     searchLeadByMobile(extractedMobile, extractedLeadSource, extractedCampaignId)
     setMobileNumber(appendMobileNumber)
+    
+    if (appendMobileNumber) {
+      identifyUser(appendMobileNumber);
+    }
+    
     generateOtp(appendMobileNumber);
   }, []);
 
@@ -119,7 +124,8 @@ const EnterOtp = () => {
           Campaign_Id: isUserAlreadyExist?.data?.Campaign_Id,
           CheckMyPF_Status: isUserAlreadyExist?.data?.CheckMyPF_Status,
           CheckMyPF_Intent : isUserAlreadyExist?.data?.CheckMyPF_Intent,
-          Total_PF_Balance: isUserAlreadyExist?.data?.Total_PF_Balance
+          Total_PF_Balance: isUserAlreadyExist?.data?.Total_PF_Balance,
+          Call_Schedule: isUserAlreadyExist?.data?.Call_Schedule
         }
         
         localStorage.setItem("existzohoUserdata", encryptData(JSON.stringify(zohodata)));
@@ -134,18 +140,18 @@ const EnterOtp = () => {
           Campaign_Id: campaignId || "",
           CheckMyPF_Status: "Authenticated user",
           CheckMyPF_Intent: "None",
-          Total_PF_Balance: ""
+          Total_PF_Balance: "",
+          Call_Schedule: ""
         }
         localStorage.setItem("lead_data", encryptData(JSON.stringify(zohodata)))
       }
   }
 
   const generateOtp = async (mobileNumber: any) => {
-    
-    setClarityTag("BUTTON_CONTINUE", "select UAN list");
     try {
       setIsLoading(true);
       const response = await post("auth/generateOtpFixMyPf", { mobile_number: mobileNumber });
+      trackClarityEvent(MESSAGES.ClarityEvents.FINRIGHT_OTP_TRIGGERED)
       setGenerateOtpResult(response);
       setIsLoading(false)
     } catch (error) {
@@ -158,7 +164,7 @@ const EnterOtp = () => {
     }
   };
 
-  const zohoUpdateLead = async () => {
+  const zohoUpdateLead = async (status:any) => {
     const rawData = decryptData(localStorage.getItem("lead_data"));
     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
     const userBalance = decryptData(localStorage.getItem("user_balance"))
@@ -197,8 +203,12 @@ const EnterOtp = () => {
         Lead_Status: user?.Lead_Status,
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
-        CheckMyPF_Status: newUser && newUser !== "" ? "Authenticated user" : user?.CheckMyPF_Status,
-        CheckMyPF_Intent: user?.CheckMyPF_Intent,
+        CheckMyPF_Status: newUser && newUser !== "" ? status : user?.CheckMyPF_Status,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "", 
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData);
@@ -238,7 +248,6 @@ const EnterOtp = () => {
   };
 
   const handleResendOtp = async () => {
-    setClarityTag("BUTTON_RESEND_OTP", "enter otp secreen after select Uan");
     setSeconds(60);
     setOtp(Array(6).fill(""));
 
@@ -246,6 +255,7 @@ const EnterOtp = () => {
       setIsLoading(true)
       const response = await post('/auth/generateOtpFixMyPf', { mobile_number: mobileNumber });
       if (response && response.success) {
+        trackClarityEvent(MESSAGES.ClarityEvents.FINRIGHT_RESEND_OTP)
         setIsLoading(false)
         setGenerateOtpResult(response);
       } else {
@@ -259,7 +269,6 @@ const EnterOtp = () => {
   };
 
   const verifyOtp = async () => {
-    setClarityTag("BUTTON_OTP_VERIFY", "enter otp secreen after select Uan");
     setIsLoading(true)
     setSeconds(0)
 
@@ -269,24 +278,47 @@ const EnterOtp = () => {
     try {
       // verify OTP
       const response = await post('/auth/confirmOtpFixpf', { mobile_number: mobileNumber, otp: otp.join('') });
-      if (response && response.success) {        
+      if (response && response.success) {
+        trackClarityEvent(MESSAGES.ClarityEvents.RETURNING_USER_SIGN_IN)
         localStorage.setItem("is_logged_in_user", encryptData("true"))
-        localStorage.setItem("user_mobile", encryptData(mobileNumber))
+        // localStorage.setItem("user_mobile", encryptData(mobileNumber))
         // call zoho API
-        zohoUpdateLead()
-        
-        if(response.message.toLowerCase() === 'user already registered') {
+        zohoUpdateLead("Authenticated user")
+
+        if (response.message.toLowerCase() === 'user already registered') {
           navigate('/dashboard', { state: { mobile_number: mobileNumber, processedUan: response.data } })
-        } else {
-          // Delay Knowlarity API call by 5 minutes
-        setTimeout(async () => {
-          try {
-            await post('lead/knowlarity-lead', { mobileNumber, tag: "Authenticated user" });
-          } catch (error) {
-            console.error("Error calling Knowlarity API after 5 minutes:", error);
+        } else if (response.message.toLowerCase() === 'bulk updated user') {
+          // call fetch data by UAN api 
+          const responseUan = await get('/data/fetchByUan/' + response.data);
+          if (!responseUan) {
+            setIsLoading(false);
+            setMessage({ type: "error", content: MESSAGES.error.generic });
+          } else {
+            setIsLoading(false);
+            if (!responseUan?.rawData?.data?.home || !responseUan?.rawData?.data?.serviceHistory?.history || !responseUan?.rawData?.data?.passbooks || !responseUan?.rawData?.data?.profile || !responseUan?.rawData?.data?.claims) {
+              setMessage({ type: "error", content: "Seems like there is some issue in getting your data from EPFO. Please try again later!!" });
+              setTimeout(() => {
+                navigate("/epfo-down");
+              }, 3000);
+              return
+            }
+
+            const employmentDataSet = [{
+              establishment_name: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.establishmentName,
+              currentOrganizationMemberId: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId,
+              userEmpHistoryCorrect: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+              userStillWorkingInOrganization: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+              serviceHistory: responseUan?.rawData?.data?.serviceHistory?.history,
+              isFromFullScrapper: true
+            }]
+
+            localStorage.setItem("user_uan", encryptData(response.data))
+            zohoUpdateLead("Full Report")
+            navigate("/employment-status", { state: { mobile_number: mobileNumber, processedUan: response.data, currentEmploymentUanData: employmentDataSet, type:'full' } });
           }
-        }, 5 * 60 * 1000);
-          navigate("/searching-uan", { state: { mobile_number: mobileNumber }})
+        } else {
+          // await post('lead/knowlarity-lead', { mobileNumber, tag: "Authenticated user" });
+          navigate("/searching-uan", { state: { mobile_number: mobileNumber } })
         }
       } else {
         setIsLoading(false);

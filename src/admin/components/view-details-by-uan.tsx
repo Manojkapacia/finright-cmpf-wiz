@@ -1,14 +1,8 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import Profile from './profile';
-import ServiceHistory from './service-history';
-import PFPassbook from './passbook';
-import { Eye, ArrowLeft } from "react-bootstrap-icons";
+import { Eye } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
-import Claims from "./claims";
 import MESSAGES from "./../../components/constant/message";
-import Withdrawability from "./withdrawability";
-import { login, post, downloadExcal, get } from "../../components/common/api"
-import Transfer from "./transfers";
+import { login, post, downloadExcal, get, put } from "../../components/common/api"
 import { useForm } from "react-hook-form";
 import debounce from "lodash.debounce";
 import { ExtractMobile } from "../../components/common/extract-mobile";
@@ -18,17 +12,23 @@ import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css"; // main style file
 import "react-date-range/dist/theme/default.css"; // theme css
 import { getTotalShare } from "../../components/common/data-transform";
+import SidebarLayout from "../SidebarLayout";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
 import { format } from "date-fns";
-import moment from 'moment'
-import Pfreport from "./pf-report";
+import ToastMessage from "../../components/common/toast-message";
+// import Pfreport from "./pf-report";
+interface ViewDetailsByUanProps {
+    isFromArchive?: boolean;
+    archiveData?: any;
+  }
 
-function ViewDetailsByUan() {
+function ViewDetailsByUan({ isFromArchive = false, archiveData }: ViewDetailsByUanProps) {
     const otpLength = 6;
-    const [value, setValue] = useState("");
-    const [currentView, setCurrentView] = useState("parent");
+    const [, setValue] = useState("");
+    // const [currentView, setCurrentView] = useState("parent");
     const [typingTimeout, setTypingTimeout] = useState<any>(null);
-    const [uanData, setUanData] = useState<any>(null)
-    const [profileData, setUserProfileData] = useState<any>(null)
+    const [, setUanData] = useState<any>(null)
+    const [, setUserProfileData] = useState<any>(null)
     const [loading, setLoading] = useState<any>(false);
     const [uanList, setUanList] = useState<any>([]);
     const [searchUAN, setSearchUAN] = useState<any>('');
@@ -37,7 +37,7 @@ function ViewDetailsByUan() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 10;
-    const [showUanDetails, setShowUanDetails] = useState<any>(false);
+    const [, setShowUanDetails] = useState<any>(false);
     const [isFirstModalOpen, setIsFirstModalOpen] = useState<any>(false);
     const [isSecondModalOpen, setIsSecondModalOpen] = useState<any>(false);
     const [formData, setFormData] = useState<any>(null);
@@ -60,7 +60,7 @@ function ViewDetailsByUan() {
     const [searchField, setSearchField] = useState("UAN");
     const [activeField, setactiveField] = useState("");
     const [showMoreOptions, setShowMoreOptions] = useState(false);
-    const moreOptionsRef = useRef<HTMLDivElement | null>(null); 
+    const moreOptionsRef = useRef<HTMLDivElement | null>(null);
     const [dateRange, setDateRange] = useState([
         {
             startDate: undefined,
@@ -70,9 +70,39 @@ function ViewDetailsByUan() {
     ]);
     const [showCalendar, setShowCalendar] = useState(false);
     const calendarRef = useRef<HTMLDivElement | null>(null);
-    const [scrapStatsResult, setScrapStatsResult] = useState<any>();
-    const [credentials, setCredentials] = useState<any>({uan: "", password: ""})
+    const [credentials, setCredentials] = useState<any>({ uan: "", password: "" })
     const skipNextPageEffectRef = useRef(false);
+    const [isOtpBypassEnabled, setIsOtpBypassEnabled] = useState(false);
+    const [modelLoader, setModelLoader] = useState(false);
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    const [toastMessage, setToastMessage] =useState({content: "", type: "" })
+    useEffect(() => {
+        if (isFromArchive && archiveData) {
+            setIsProcessing(true);
+            try {
+                // Simulate API call delay
+                const timer = setTimeout(() => {
+                    setUanData(archiveData);
+                    setValue(archiveData?.meta?.uan);
+                    setIsProcessing(false);
+                    navigate('/operation/view-details', {
+                        state: {
+                          uanData: archiveData,
+                          isFromArchive: true,
+                          value: archiveData?.meta?.uan
+                        },
+                      });
+                }, 1000);
+                
+                return () => clearTimeout(timer);
+            } catch (error) {
+                console.error("Error processing archive data:", error);
+                setIsProcessing(false);
+            }
+        } else {
+            setLoading(false);
+        }
+    }, [isFromArchive, archiveData]);
 
     useEffect(() => {
         const handleClickOutside = (event: any) => {
@@ -83,7 +113,7 @@ function ViewDetailsByUan() {
                 setShowMoreOptions(false); // Close the dropdown
             }
         };
-        if(moreOptionsRef){
+        if (moreOptionsRef) {
             document.addEventListener("mousedown", handleClickOutside); // Add event listener  
         }
         if (showCalendar) {
@@ -110,9 +140,13 @@ function ViewDetailsByUan() {
     });
 
     const navigate = useNavigate();
-    const handleBackButtonClick = () => {
-        setShowUanDetails(false);
-    };
+    // const handleBackButtonClick = () => {
+    //     if(isFromArchive){
+    //         navigate("/operation/archived-module");
+    //     }else{
+    //         setShowUanDetails(false);
+    //     }
+    // };
 
     React.useEffect(() => {
         let interval: any;
@@ -170,12 +204,36 @@ function ViewDetailsByUan() {
                     else {
                         setUanData(response.rawData);
                         setUserProfileData(response.profileData)
+                        navigate('/operation/view-details', {
+                            state: {
+                              uanData: response.rawData,
+                              profileData: response.profileData,
+                            },
+                          });
                     }
-                } catch (error) {
-                    console.error("Error fetching data:", error);
-                    setUanData(null)
-                } finally {
+                }
+                catch (error: any) {
+                    setUanData(null);
+                    setShowUanDetails(false);
+                  
+                    let userMessage = "Something went wrong. Please try again later.";
+                  
+                    // If the backend includes a message in the 500 error
+                    const serverErrorMessage = error?.response?.data?.error;
+
+                    if (error?.response?.status === 500 && serverErrorMessage) {
+                        if (serverErrorMessage.toLowerCase().includes("failed to fetch and clean data")) {
+                            userMessage = "No data found for this UAN.";
+                        } else {
+                            userMessage = serverErrorMessage;
+                        }
+                    }
+                    // Show toast instead of alert
+                    setToastMessage({ content: userMessage, type: "error"});
+                  }
+                finally {
                     setLoading(false); // Stop showing the loading screen
+                    // setToastMessage({ content: '', type: '' });
                 }
             }, 0);
             setTypingTimeout(timeout);
@@ -205,7 +263,7 @@ function ViewDetailsByUan() {
 
         setLoading(true);
         setLoaderText('Loading data, please wait...');
-        
+
         try {
             const dataToSend = {
                 page: page || 1,
@@ -233,8 +291,8 @@ function ViewDetailsByUan() {
             setLoaderText('');
         }
     };
-
     useEffect(() => {
+        if (isFromArchive) return;
         if (skipNextPageEffectRef.current) {
             skipNextPageEffectRef.current = false; // Reset the flag
             return;
@@ -440,15 +498,15 @@ function ViewDetailsByUan() {
         }
     }
 
-    const fetchScrapStats = async() => {        
-        const scrapResult = await get('/data/scrap/hourlySummary')
-        setScrapStatsResult(scrapResult)
-    }
+    // const fetchScrapStats = async() => {        
+    //     const scrapResult = await get('/data/scrap/hourlySummary')
+    //     setScrapStatsResult(scrapResult)
+    // }
 
     useEffect(() => {
         // fetch scrap stats 
-        fetchScrapStats()
-
+        // fetchScrapStats()
+        getToggleValue();
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -466,7 +524,7 @@ function ViewDetailsByUan() {
         sethideOtpExpireTimer(false);
         setShowBlur(false)
     };
-    
+
     const handleCloseUanModal = () => {
         setIsUanModalOpen(false);
         setShowBlur(false);
@@ -517,30 +575,44 @@ function ViewDetailsByUan() {
 
     const handleRendOtpClick = async () => {
         if (formData) {
+            setShowMessage("Please wait...Resend OTP");
             await onSubmit(formData);
             sethideOtpExpireTimer(true);
             setTimer(45);
         }
     };
 
+    const getToggleValue = async () => {
+        try {
+          const response = await get("/data/toggle/keys");
+          const otpByPassToggle = response?.allTogglers?.find((item:any) => item.type === "otp-bypass");
+          setIsOtpBypassEnabled(otpByPassToggle?.isEnabled);
+        } catch (err) { }
+      }
+
     const otpSubmit = async () => {
-        setLoaderText("Please wait...verifying OTP");
         setShowMessage("");
+        if (!otpValues.every((digit: any) => digit)) {
+            setShowMessage(MESSAGES.error.invalidOtp);
+            return;
+          }
+        setShowMessage("Please wait...verifying OTP");
+        setModelLoader(true);
         if (otpValues.every((digit: any) => digit)) {
             try {
                 const endpoint = "auth/submit-otp"
-                setLoading(true);
                 const mobile_number = ""
                 const result = await post(endpoint, { otp: otpValues.join(''), source: 'agent', uan: credentials.uan, password: credentials.password, mobile_number });
                 if (result.status === 400) {
-                    setLoading(false);
-                    setLoaderText('');
+                    // setLoading(false);
+                    // setLoaderText('');
                     setShowMessage(result.message);
                     setOtpValues(Array(6).fill(""));
                     sethideOtpExpireTimer(false);
+                    return
                 } else {
-                    setLoading(false);
-                    setLoaderText('');
+                    // setLoading(false);
+                    // setLoaderText('');
                     setShowMessage("User added successfully!!")
                     setOtpValues(Array(6).fill(""));
                     setShowOtpBoxes(false)
@@ -553,49 +625,56 @@ function ViewDetailsByUan() {
                 }
 
             } catch (error: any) {
-                setLoading(false);
-                setLoaderText('');
-                setShowMessage(error.message || MESSAGES.error.generic);
+                // setLoading(false);
+                // setLoaderText('');
+                const isNetworkError = error?.code === "ERR_NETWORK";
+                setShowMessage(
+                    isNetworkError
+                      ? "Network error. Please check your internet connection."
+                      : error?.message || MESSAGES.error.generic
+                  );
                 setOtpValues(Array(6).fill(""));
                 sethideOtpExpireTimer(false);
-            }
-        } else {
-            setLoading(false);
-            setLoaderText('');
-            setShowMessage(MESSAGES.error.invalidOtp);
-            setOtpValues(Array(6).fill(""));
-            sethideOtpExpireTimer(false);
-        }
-    }
-
-    const onSubmit = async (data: any) => {
-        setLoaderText("Please wait...checking credentials");
-        setShowMessage("");
-        setShowOtpBoxes(true)
-
-        //loader for a second 
-        setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        try {
-            setLoading(true);
-            setCredentials({uan: data.uan, password: data.password.trim()})
-            const mobile_number= ""
-            const result = await login(data.uan, data.password.trim(), mobile_number);
-            if (result.status === 400) {
-                setLoading(false);
+            } finally {
+                setModelLoader(false);
                 setLoaderText('');
-                setShowMessage(result.message);
-                sethideOtpExpireTimer(false);
-            } else {
-                if (result.message === "User Successfully Verified") {
-                    setLoading(false);
-                    setLoaderText('');
-                    setShowMessage('User Successfully Verified');
-                } else {
+              }
+        } 
+    }
+    const onSubmit = async (data: any) => {
+        // setShowMessage("");
+        if (!data.uan || !data.password) return;
+      
+        try {
+          setModelLoader(true);
+          setCredentials({ uan: data?.uan, password: data?.password });
+      
+          const result = await login(data?.uan, data?.password.trim(), "");
+      
+          if (result.status === 400) {
+            setModelLoader(false);
+            setShowMessage(result.message);
+            
+            sethideOtpExpireTimer(false);
+            return;
+          }
+      
+          let retries = 0;
+          const maxRetries = 60;
+          const pollInterval = 3000;
+      
+          const pollStatus = async () => {
+            try {
+              const loginStatusResponse = await get(`/auth/login-status?uan=${data.uan}`);
+      
+              if (loginStatusResponse?.data?.status === "success") {
+                setTimeout(() => {
+                    setModelLoader(false);
+                  if (isOtpBypassEnabled) {
+                    handleByPassOtp(data.uan);
+                  } else {
+                    trackClarityEvent(MESSAGES.ClarityEvents.SCRAPPER_OTP_SENT);
                     ExtractMobile(result.message);
-                    setLoading(false);
-                    setLoaderText('');
                     setIsFirstModalOpen(false);
                     setIsSecondModalOpen(true);
                     setShowBlur(true);
@@ -603,32 +682,120 @@ function ViewDetailsByUan() {
                     setOtpValues(Array(6).fill(""));
                     sethideOtpExpireTimer(true);
                     setShowMessage('');
+                    setFormData(data)
+                  }
+                }, 1000);
+              } else if (loginStatusResponse?.data?.status === "failed") {
+                setModelLoader(false);
+                setShowMessage(loginStatusResponse?.data?.message || MESSAGES.error.generic);
+                if (loginStatusResponse?.data?.statusCode >= 500) {
+                  setIsFirstModalOpen(false);
                 }
-                setFormData(data);
+              } else {
+                if (++retries < maxRetries) {
+                  setTimeout(pollStatus, pollInterval);
+                } else {
+                  setIsFirstModalOpen(false);
+                  setShowMessage("Login timed out. Please try again later.");
+                  setModelLoader(false);
+                  // Optional: navigate("/epfo-down");
+                }
+              }
+            } catch (err: any) {
+              setModelLoader(false);
+              setShowMessage(err?.message || "Something went wrong. Please try again later.");
             }
+          };
+      
+          pollStatus();
         } catch (error: any) {
-            setLoading(false);
-            setLoaderText('');
-            sethideOtpExpireTimer(false);
-            if (error?.status === 401) {
-                setShowMessage(MESSAGES.error.invalidEpfoCredentials);
-            } else if (error.status >= 500) {
-                // navigate("/epfo-down");
+          setModelLoader(false);
+          setShowMessage(error?.status === 401 ? "Invalid Credentials" : error?.message || MESSAGES.error.generic);
+        }
+      };
+      
+
+    const handleByPassOtp = async (uan: any) => {
+        try {
+            // to update the password
+            await put('auth/update-profile', { uan, password: credentials.password });
+
+            // call fetch data by UAN api 
+            const responseUan = await get('/data/fetchByUan/' + uan);
+
+            if (responseUan?.rawData?.data?.error && responseUan.rawData.data.error.trim() !== "") {
+                const errorMsg = "Password Expired!! Please reset on EPFO portal and try again re-login here after 6 hrs post resetting the password";
+                setShowMessage(errorMsg);
+                setModelLoader(false);
+                setIsFirstModalOpen(false);
+                return;
+            }
+            if (!responseUan) {
+                setModelLoader(false);
                 setShowMessage(MESSAGES.error.generic);
             } else {
-                setShowMessage(error.message);
+                setModelLoader(false);
+                if (!responseUan?.rawData?.data?.home || !responseUan?.rawData?.data?.serviceHistory?.history || !responseUan?.rawData?.data?.passbooks || !responseUan?.rawData?.data?.profile || !responseUan?.rawData?.data?.claims) {
+                    setShowMessage("Seems like there is some issue in getting your data from EPFO. Please try again later!!");
+                    return
+                }
+                setShowMessage("User added successfully!!")
+                setTimeout(() => {
+                    setIsFirstModalOpen(false);
+                    setShowBlur(false);
+                    fetchUanList();
+                }, 5000);
+            }
+        } catch (error: any) {
+            setModelLoader(false)
+            if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+                console.warn('Server Connection Error:', {
+                    error: error.message,
+                    code: error.code
+                });
+                setShowMessage('Server connection failed. Please check your connection.');
+                return;
+            }
+
+            // Handle specific status codes
+            switch (error.status) {
+                case 503:
+                    if (error?.errorCode === "SCRAPPER_DOWN") {
+                        setShowMessage("Service is temporarily unavailable. Please try again later.");
+                    } else if (error?.errorCode === "NETWORK_ERROR") {
+                        setShowMessage("Unable to connect to the service. Please check your connection.");
+                    } else {
+                        setShowMessage("Service is unavailable. Try again later.");
+                    }
+                    return;
+        
+                case 500:
+                    setShowMessage("An internal server error occurred. Please try again later.");
+                    return;
+        
+                case 400:
+                    setShowMessage(MESSAGES.error.invalidOtpServer);
+                    return;
+        
+                default:
+                    setShowMessage(error.message || MESSAGES.error.generic);
+                    return;
             }
         }
-    }
+    };
 
     const getTotalPassbookBalance = (passbook: any) => {
         const passbookData = getTotalShare(passbook);
-        return passbookData.totalBalance;
+        if (passbookData && passbookData.totalBalance) {
+            return passbookData.totalBalance;
+        } else {
+            return "₹ 0";
+        }
     };
-
     return (
         <>
-            {loading ? (
+         <SidebarLayout>
+            {loading || isProcessing ? (
                 <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50">
                     <div className="text-center p-4 bg-white rounded shadow">
                         <div className="spinner-border text-primary" role="status">
@@ -637,331 +804,248 @@ function ViewDetailsByUan() {
                         <p className="mt-3">{loaderText}</p>
                     </div>
                 </div>
-            ) : (
+            ) : (             
                 <div className="container">
-                    {showUanDetails ? (
-                        currentView === "parent" ? (
-                            <div className="row">
-                                <div className="col-md-10 offset-md-1 mt-5">
-                                    <button className="btn p-0 d-flex align-items-center my-3" onClick={handleBackButtonClick}>
-                                        <ArrowLeft size={20} className="me-1" /> Back
-                                    </button>
-                                    <table className="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th className="text-center">Profile</th>
-                                                <th className="text-center">Service History</th>
-                                                <th className="text-center">Transfers</th>
-                                                <th className="text-center">Passbook</th>
-                                                <th className="text-center">Claims</th>
-                                                <th className="text-center">Withdrawability Report</th>
-                                                <th className="text-center">Report 2.0</th>
-                                            </tr>
-                                        </thead>
-                                        {uanData &&
-                                            <tbody>
-                                                {uanData.error ? <p className="text-danger text-center">Please change the password"</p>
-                                                    : <tr>
-                                                        <td className="text-center">
-                                                            <Eye size={20} onClick={() => setCurrentView("profile")}
-                                                                className="me-md-3 me-2 cursor-pointer" style={{ cursor: "pointer" }} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2"
-                                                                onClick={() => setCurrentView("serviceHistory")} style={{ cursor: "pointer" }} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2" style={{ cursor: "pointer" }} onClick={() => setCurrentView("transfer")} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2" style={{ cursor: "pointer" }} onClick={() => setCurrentView("pfpassbook")} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2" style={{ cursor: "pointer" }} onClick={() => setCurrentView("claims")} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2" style={{ cursor: "pointer" }} onClick={() => setCurrentView("withdraw")} />
-                                                        </td>
-                                                        <td className="text-center">
-                                                            <Eye size={20} className="me-md-3 me-2" style={{ cursor: "pointer" }} onClick={() => setCurrentView("Report 2.0")} />
-                                                        </td>
-                                                    </tr>}
-
-                                            </tbody>
-                                        }
-                                        {!uanData && <tbody><tr><td colSpan={6} className="text-center">No Data Found!!</td></tr></tbody>}
-                                    </table>
-                                </div>
-                            </div>
-                        ) : currentView === "profile" ? (
-                            <Profile jsonData={uanData} profileData={profileData} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "serviceHistory" ? (
-                            <ServiceHistory jsonData={uanData} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "pfpassbook" ? (
-                            <PFPassbook jsonData={uanData} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "claims" ? (
-                            <Claims jsonData={uanData} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "withdraw" ? (
-                            <Withdrawability jsonData={uanData} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "transfer" ? (
-                            <Transfer uan={value} onBack={() => setCurrentView("parent")} />
-                        ) : currentView === "Report 2.0" ? (
-                            <Pfreport jsonData={uanData} onBack={() => setCurrentView("parent")} />
-                        ): null
-
-                    ) : (
-                        <>
-                            {scrapStatsResult?.success && 
-                                <div className="row mt-5">
-                                    <p className="text-center scrap-result">
-                                        Total Scrap : 
-                                        <strong className="blink">&nbsp;{scrapStatsResult?.data?.total}</strong>
-                                        &nbsp;&nbsp; | &nbsp;&nbsp;
-                                        Scrapper Success rate : 
-                                        <strong className="blink">&nbsp;{scrapStatsResult?.data?.successRate}%</strong>
-                                        &nbsp;&nbsp; | &nbsp;&nbsp;
-                                        Average Scraping Time: 
-                                        <strong className="blink">&nbsp;{scrapStatsResult?.data?.avgProcessTime} sec</strong>
-                                        &nbsp;&nbsp; | &nbsp;&nbsp;
-                                        Last updated on: 
-                                        <strong className="blink">&nbsp;{moment(scrapStatsResult?.data?.lastUpdated).local().format('MMMM Do YYYY, h:mm:ss A')}</strong>
-                                    </p>
-                                </div>
-                            }
-                            <div className="row">
-                                <div className="col-md-8 offset-md-2 mt-2">
+                        <>{toastMessage && (
+              <ToastMessage
+                message={toastMessage.content}
+                type={toastMessage.type}
+              />
+            )}
+                            <div className="row " style= {{ marginLeft: "1.5rem" }}>
+                                <div className="col-md-9 offset-md-1 mt-5">
                                     <div className="row d-flex align-items-center">
+                                        
                                         <div className="col-md-8">
-                                        <div className="position-relative" >
-                                            {/* Input box */}
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                placeholder="Search By"
-                                                aria-label="Search"
-                                                value={searchUAN}
-                                                onChange={handleSearch}
-                                                style={{
-                                                    paddingLeft: "8.125rem",
-                                                    minHeight: "2.3rem",
-                                                }}
-                                            />
+                                            <div className="position-relative" >
+                                                {/* Input box */}
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Search By"
+                                                    aria-label="Search"
+                                                    value={searchUAN}
+                                                    onChange={handleSearch}
+                                                    style={{
+                                                        paddingLeft: "8.125rem",
+                                                        minHeight: "2.3rem",
+                                                    }}
+                                                />
 
-                                            {/* Select inside input */}
-                                            <select
-                                                value={searchField}
-                                                onChange={(e) => setSearchField(e.target.value)}
-                                                className="form-select"
-                                                style={{
-                                                    position: "absolute",
-                                                    top: "50%",
-                                                    left: "10px",
-                                                    transform: "translateY(-50%)",
-                                                    width: "6.875rem",
-                                                    height: "70%",
-                                                    backgroundColor: "#f8f9fa", // light background
-                                                    padding: "0 10px",
-                                                    fontSize: "14px",
-                                                    border: "none",
-                                                    borderRadius: "0.375rem",
-                                                    zIndex: 2, // higher than input
-                                                    appearance: "none",
-                                                    pointerEvents: "auto",
-                                                }}
-                                            >
-                                                <option value="UAN">UAN</option>
-                                                <option value="Mobile">Mobile</option>
-                                                <option value="Name">Name</option>
-                                            </select>
-                                        </div>
-                                        </div>
-                                        <div className="col-md-4  d-flex justify-content-end">
-
-                                        <button type="button" className="btn btn-primary rounded mobile-btn-style  p-0 px-2 " onClick={handleOpenFirstModal}>
-                                        Add User
-                                    </button>
-                                    <div className="position-relative  mobile-btn-style ms-2">
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary w-100"
-                                            onClick={() => setShowMoreOptions(!showMoreOptions)}
-                                        >
-                                            More Options
-                                        </button>
-                                        {showMoreOptions && (
-                                            <div
-                                                ref={moreOptionsRef}
-                                                className="position-absolute mt-2 border p-3 bg-light rounded shadow"
-                                                style={{
-                                                    maxWidth: "24rem",
-                                                    zIndex: 1000,
-                                                    top: "100%", // just below the More Options button
-                                                    left: 0
-                                                }}
-                                            >
-                                                {/* <button
-                                                    type="button"
-                                                    className="btn btn-success w-100 mb-2"
-                                                    style={{ width: "100%", minWidth: "15rem", whiteSpace: "nowrap" }}
-                                                    onClick={handleUandetails}
+                                                {/* Select inside input */}
+                                                <select
+                                                    value={searchField}
+                                                    onChange={(e) => setSearchField(e.target.value)}
+                                                    className="form-select"
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: "50%",
+                                                        left: "10px",
+                                                        transform: "translateY(-50%)",
+                                                        width: "6.875rem",
+                                                        height: "70%",
+                                                        backgroundColor: "#f8f9fa", // light background
+                                                        padding: "0 10px",
+                                                        fontSize: "14px",
+                                                        border: "none",
+                                                        borderRadius: "0.375rem",
+                                                        zIndex: 2, // higher than input
+                                                        appearance: "none",
+                                                        pointerEvents: "auto",
+                                                    }}
                                                 >
-                                                    Get UAN list from Mobile
-                                                </button> */}
-                                                <div className="position-relative mb-2 responsive-nowrap">
-                                                    {/* <div className="position-relative" style={{ maxWidth: "22rem", borderRadius: 0 }}> */}
+                                                    <option value="UAN">UAN</option>
+                                                    <option value="Mobile">Mobile</option>
+                                                    <option value="Name">Name</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="d-flex w-100 gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary rounded mobile-btn-style w-50 same-height-btn"
+                                                    onClick={handleOpenFirstModal}
+                                                >
+                                                    Add User
+                                                </button>
+
+                                                <div className="position-relative w-50 mt-3 mt-sm-0">
                                                     <button
                                                         type="button"
-                                                        className="btn btn-primary w-100"
-                                                        onClick={() => setShowmobikwickCalendar(!showmobikwickCalendar)}
+                                                        className="btn btn-secondary w-100 same-height-btn"
+                                                        onClick={() => setShowMoreOptions(!showMoreOptions)}
                                                     >
-                                                        Download Mobikwik MIS
+                                                        More Options
                                                     </button>
-                                                    {showmobikwickCalendar && (
+
+                                                    {showMoreOptions && (
                                                         <div
-                                                            ref={calendarRef}
-                                                            className="position-absolute bg-white p-3 shadow rounded"
+                                                            ref={moreOptionsRef}
+                                                            className="position-absolute mt-2 border p-3 bg-light rounded shadow"
                                                             style={{
+                                                                maxWidth: "24rem",
                                                                 zIndex: 1000,
                                                                 top: "100%",
-                                                                left: 0,
-                                                                width: "100%",
+                                                                left: 0
                                                             }}
                                                         >
-                                                            <DateRange
-                                                                editableDateInputs={true}
-                                                                onChange={handleDateChange1}
-                                                                moveRangeOnFirstSelection={false}
-                                                                ranges={selectdateRange}
-                                                            />
-                                                            <button
-                                                                className="btn btn-primary btn-sm mt-2"
-                                                                onClick={() => {
-                                                                    setShowmobikwickCalendar(false);
-                                                                    handleDownload();
-                                                                }}
-                                                            >
-                                                                Done
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="position-relative responsive-nowrap">
-                                                    {/* <div className="position-relative" style={{ maxWidth: "22rem", borderRadius: 0 }}> */}
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-primary w-100"
-                                                        onClick={() => setShowCmpfCalendar(!showCmpfCalendar)}
-                                                    >
-                                                        CMPF MIS
-                                                    </button>
-                                                    {showCmpfCalendar && (
-                                                        <div
-                                                            ref={calendarRef}
-                                                            className="position-absolute bg-white p-3 shadow rounded"
-                                                            style={{
-                                                                zIndex: 1000,
-                                                                top: "100%",
-                                                                left: 0,
-                                                                width: "100%",
-                                                            }}
-                                                        >
-                                                            <DateRange
-                                                                editableDateInputs={true}
-                                                                onChange={handleDateChange2}
-                                                                moveRangeOnFirstSelection={false}
-                                                                ranges={selectCmpfdateRange}
-                                                            />
-                                                            <button
-                                                                className="btn btn-primary btn-sm mt-2"
-                                                                onClick={() => {
-                                                                    setShowCmpfCalendar(false);
-                                                                    handleDownloadCmpf();
-                                                                }}
-                                                            >
-                                                                Done
-                                                            </button>
+                                                            <div className="position-relative mb-2 responsive-nowrap">
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-primary w-100"
+                                                                    onClick={() => setShowmobikwickCalendar(!showmobikwickCalendar)}
+                                                                >
+                                                                    Download Mobikwik MIS
+                                                                </button>
+                                                                {showmobikwickCalendar && (
+                                                                    <div
+                                                                        ref={calendarRef}
+                                                                        className="position-absolute bg-white p-3 shadow rounded"
+                                                                        style={{
+                                                                            zIndex: 1000,
+                                                                            top: "100%",
+                                                                            left: 0,
+                                                                            width: "100%",
+                                                                        }}
+                                                                    >
+                                                                        <DateRange
+                                                                            editableDateInputs={true}
+                                                                            onChange={handleDateChange1}
+                                                                            moveRangeOnFirstSelection={false}
+                                                                            ranges={selectdateRange}
+                                                                        />
+                                                                        <button
+                                                                            className="btn btn-primary btn-sm mt-2"
+                                                                            onClick={() => {
+                                                                                setShowmobikwickCalendar(false);
+                                                                                handleDownload();
+                                                                            }}
+                                                                        >
+                                                                            Done
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="position-relative responsive-nowrap">
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-primary w-100"
+                                                                    onClick={() => setShowCmpfCalendar(!showCmpfCalendar)}
+                                                                >
+                                                                    CMPF MIS
+                                                                </button>
+                                                                {showCmpfCalendar && (
+                                                                    <div
+                                                                        ref={calendarRef}
+                                                                        className="position-absolute bg-white p-3 shadow rounded"
+                                                                        style={{
+                                                                            zIndex: 1000,
+                                                                            top: "100%",
+                                                                            left: 0,
+                                                                            width: "100%",
+                                                                        }}
+                                                                    >
+                                                                        <DateRange
+                                                                            editableDateInputs={true}
+                                                                            onChange={handleDateChange2}
+                                                                            moveRangeOnFirstSelection={false}
+                                                                            ranges={selectCmpfdateRange}
+                                                                        />
+                                                                        <button
+                                                                            className="btn btn-primary btn-sm mt-2"
+                                                                            onClick={() => {
+                                                                                setShowCmpfCalendar(false);
+                                                                                handleDownloadCmpf();
+                                                                            }}
+                                                                        >
+                                                                            Done
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
                                         </div>
-                                    </div>
-                                 
-                                <div className="row mt-2 g-3 align-items-end mb-4">
-                                    <div className="col-md-3 position-relative">
-                                        {/* <label className="fw-bold">Filter by Date</label> */}
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            readOnly
-                                            value={
-                                                dateRange[0]?.startDate && dateRange[0]?.endDate
-                                                    ? `${formatDate(dateRange[0].startDate)} - ${formatDate(dateRange[0].endDate)}`
-                                                    : 'Filter by Date'
-                                            }
-                                            onClick={() => setShowCalendar(true)}
-                                        />
 
-                                            {showCalendar && (
-                                                <div
-                                                    ref={calendarRef}
-                                                    className="position-absolute bg-white p-3 shadow rounded"
-                                                    style={{
-                                                        zIndex: 1000,
-                                                        top: "100%",
-                                                        left: 0,
-                                                        width: "100%",
-                                                    }}
-                                                >
-                                                    <DateRange
-                                                        editableDateInputs={true}
-                                                        onChange={handleDateChange}
-                                                        moveRangeOnFirstSelection={false}
-                                                        ranges={dateRange}
+                                    </div>
+
+                                    <div className="row mt-3 align-items-end mb-4">
+                                        <div className="col-md-8">
+                                            <div className="row">
+                                                <div className="col-md-4">
+                                                    {/* <label className="fw-bold">Filter by Date</label> */}
+                                                    <input
+                                                        type="text"
+                                                        className="form-control"
+                                                        readOnly
+                                                        value={
+                                                            dateRange[0]?.startDate && dateRange[0]?.endDate
+                                                                ? `${formatDate(dateRange[0].startDate)} - ${formatDate(dateRange[0].endDate)}`
+                                                                : 'Filter by Date'
+                                                        }
+                                                        onClick={() => setShowCalendar(true)}
                                                     />
-                                                    <button className=" btn btn-primary btn-sm mt-2" onClick={() => setShowCalendar(false)}>
-                                                        Done
-                                                    </button>
+
+                                                    {showCalendar && (
+                                                        <div
+                                                            ref={calendarRef}
+                                                            className="position-absolute bg-white p-3 shadow rounded"
+                                                            style={{
+                                                                zIndex: 1000,
+                                                                top: "100%",
+                                                                left: 0,
+                                                                width: "100%",
+                                                            }}
+                                                        >
+                                                            <DateRange
+                                                                editableDateInputs={true}
+                                                                onChange={handleDateChange}
+                                                                moveRangeOnFirstSelection={false}
+                                                                ranges={dateRange}
+                                                            />
+                                                            <button className=" btn btn-primary btn-sm mt-2" onClick={() => setShowCalendar(false)}>
+                                                                Done
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+
+                                                <div className="col-md-4 my-2 my-sm-0">
+                                                    <select
+                                                        className="form-select"
+                                                        value={sourceFilter} onChange={handleSourceChange}
+                                                    >
+                                                        <option value="">Filter by Balance</option>
+                                                        <option value="Less than 50,000">Less than 50,000</option>
+                                                        <option value="50,000-1,00,000">50,000-1,00,000</option>
+                                                        <option value="More than 1,00,000">more than 1,00,000</option>
+                                                    </select>
+                                                </div>
+                                                <div className="col-md-4">
+                                                    <select
+                                                        className="form-select"
+                                                        value={paymentFilter} onChange={handlePaymentChange}
+                                                    >
+                                                        <option value="">Filter by Status</option>
+                                                        <option value="Authenticated">Authenticated</option>
+                                                        <option value="Passbook Only">Passbook Only </option>
+                                                        <option value="Full Report Generated">Full Report Generated </option>
+                                                        <option value="Scrapping Issue">Scrapping Issue</option>
+                                                        <option value="N/A">N/A</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-
-                                    <div className="col-md-3">
-                                        {/* <label className="fw-bold">Filter by total balance</label> */}
-                                        <select
-                                            className="form-select"
-                                            value={sourceFilter} onChange={handleSourceChange}
-                                        >
-                                            <option value="">Filter by Total Balance</option>
-                                            <option value="Less than 50,000">Less than 50,000</option>
-                                            <option value="50,000-1,00,000">50,000-1,00,000</option>
-                                            <option value="More than 1,00,000">more than 1,00,000</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="col-md-3">
-                                        {/* <label className="fw-bold">Filter by User Status</label> */}
-                                        <select
-                                            className="form-select"
-                                            value={paymentFilter} onChange={handlePaymentChange}
-                                        >
-                                            <option value="">Filter by User Status</option>
-                                            <option value="Authenticated">Authenticated</option>
-                                            <option value="Passbook Only">Passbook Only </option>
-                                            <option value="Full Report Generated">Full Report Generated </option>
-                                            <option value="Scrapping Issue">Scrapping Issue</option>
-                                            <option value="N/A">N/A</option>
-                                        </select>
-                                    </div>
-                                    <div className="col-md-3">
-                                        <div className="d-flex gap-2 w-100">
-                                            <button className="btn btn-secondary w-50" onClick={handleFilterClick}>Filter</button>
-                                            <button className="btn btn-danger w-50" onClick={resetFilters}>Reset</button>
+                                        <div className="col-md-4 mt-3 mt-sm-0">
+                                            <div className="d-flex gap-2 w-100">
+                                                <button className="btn btn-secondary w-50 same-height-btn" onClick={handleFilterClick}>Filter</button>
+                                                <button className="btn btn-danger w-50 same-height-btn" onClick={resetFilters}>Reset</button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
                                     {uanList?.length > 0 ? (
                                         uanList?.map((item: any, index: any) => (
@@ -1003,7 +1087,9 @@ function ViewDetailsByUan() {
                                                                 </div>
                                                                 <div className="col-md-4 ">
                                                                     <p>
-                                                                        <strong >User Status :</strong> {item.profileData?.latestProfile?.userStatus || "Authenticated"}
+                                                                            <strong >User Status :</strong> {item.profileData?.latestProfile?.userStatus?.toLowerCase() === 'passbook only'
+                                                                                ? "Partial Report Generated"
+                                                                                : item.profileData?.latestProfile?.userStatus || "Authenticated"}
                                                                     </p>
 
                                                                 </div>
@@ -1028,7 +1114,7 @@ function ViewDetailsByUan() {
                                             <tbody><tr><td className="text-center">No Data Found!!</td></tr></tbody>
                                         </table>
                                     }
-                                    {totalItems >10 && (
+                                    {totalItems > 10 && (
                                         <nav aria-label="Page navigation example">
                                             <ul className="pagination justify-content-end">
                                                 <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
@@ -1065,14 +1151,30 @@ function ViewDetailsByUan() {
                                 </div>
                             </div>
                         </>
-                    )}
+                    {/* )} */}
                 </div>
-
+                
             )}
+             </SidebarLayout>
             {/* {showBlur && <div className={`custom-modal-overlay ${isFirstModalOpen ? "active" : ""}`} />} */}
             {showBlur && <div className="custom-modal-overlay active" />}
 
             <UanListModal isOpen={isUanModalOpen} onClose={handleCloseUanModal} />
+            {modelLoader && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+                    style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 1060, // Bootstrap modal is z-index: 1055
+                    }}
+                >
+                    <div className="text-center p-4 bg-white rounded shadow">
+                        <div className="spinner-border text-primary" role="status"></div>
+                        <p className="mt-3 mb-0">{"Verifying credentials and fetching details, please wait..."}</p>
+                    </div>
+                </div>
+            )}
             {isFirstModalOpen && (
                 <div
                     className="modal fade show d-block"
@@ -1089,12 +1191,13 @@ function ViewDetailsByUan() {
                             <div className="modal-body">
                                 <div className="row justify-content-center align-items-center">
                                     <div className="col-md-12">
-                                        {loading ? (
-                                            <div className="text-center my-5">
-                                                <div className="spinner-border text-primary" role="status"></div>
-                                                <p className="mt-3">{loaderText}</p>
-                                            </div>
-                                        ) : (
+                                        <div
+                                            style={{
+                                                filter: modelLoader ? 'blur(3px)' : 'none',
+                                                pointerEvents: modelLoader ? 'none' : 'auto',
+                                                transition: 'filter 0.3s ease-in-out',
+                                            }}
+                                        >
                                             <form onSubmit={handleSubmit(onSubmit)}>
                                                 <div className="mb-3">
                                                     <label htmlFor="exampleInput" className="form-label">
@@ -1150,13 +1253,14 @@ function ViewDetailsByUan() {
                                                     {errors.password && <span className="text-danger">{errors.password.message}</span>}
                                                 </div>
                                                 <div className='text-center mt-5'>
-                                                    <button className="pfRiskButtons py-2 px-5" disabled={!isValid} type="submit">Continue</button>
+                                                    <button className="pfRiskButtons py-2 px-5" disabled={!isValid} type="submit">{isOtpBypassEnabled ? "Submit" : "Continue"}</button>
                                                 </div>
                                             </form>
-                                        )}
+
+                                        </div>
 
                                         <p className="text-center text-danger mt-3">
-                                            {showMessage === 'User Successfully Verified' ? <span>This User Already Exist</span> : showMessage}
+                                            {showMessage === 'User added successfully!!' ? <span className="text-success">User added successfully!!</span> : showMessage}
                                         </p>
                                     </div>
                                 </div>
@@ -1181,48 +1285,57 @@ function ViewDetailsByUan() {
                                 <div className="otpLabel mt-2 mt-lg-5 pt-lg-5">
                                     Enter OTP sent to your EPF registered number
                                 </div>
-                                <form onSubmit={handleSubmit(otpSubmit)}>
-                                    <div className="d-flex">
-                                        {Array.from({ length: otpLength }).map((_, index) => (
-                                            <input
-                                                key={index}
-                                                id={`otp-input-${index}`}
-                                                type="number"
-                                                maxLength={1}
-                                                autoComplete='off'
-                                                name='otp'
-                                                className={`otpInput form-control text-center mx-1 mt-2 ${!showOtpBoxes ? 'disabled-input' : ''}`}
-                                                value={otpValues[index]}
-                                                onChange={(e) => handleOtpChange(e.target.value, index)}
-                                                onKeyDown={(e) => handleBackspace(e, index)}
-                                                aria-label={`OTP input ${index + 1}`}
-                                                disabled={!showOtpBoxes}
-                                            />
-                                        ))}
-                                    </div>
-                                    <div className="d-flex justify-content-between align-items-center mt-2">
-                                        <p
-                                            className="text-danger mb-0"
-                                            style={{ visibility: hideOtpExpireTimer ? "visible" : "hidden" }}>
-                                            {timer > 0 ? `OTP expires in ${timer} seconds.` : "OTP expired"}
-                                        </p>
-                                        <a
-                                            className={`text-decoration-none labelSubHeading float-end mt-2 ${(timer > 0) ? 'disabled-link' : ''}`}
-                                            style={{ cursor: (timer > 0) ? "not-allowed" : "pointer" }}
-                                            onClick={(timer > 0) ? undefined : handleRendOtpClick}
-                                        >
-                                            Resend OTP
-                                        </a>
-                                    </div>
+                                <div
+                                    style={{
+                                        filter: modelLoader ? 'blur(3px)' : 'none',
+                                        pointerEvents: modelLoader ? 'none' : 'auto',
+                                        transition: 'filter 0.3s ease-in-out',
+                                    }}
+                                >
+                                    <form onSubmit={handleSubmit(otpSubmit)}>
+                                        <div className="d-flex">
+                                            {Array.from({ length: otpLength }).map((_, index) => (
+                                                <input
+                                                    key={index}
+                                                    id={`otp-input-${index}`}
+                                                    type="number"
+                                                    maxLength={1}
+                                                    autoComplete='off'
+                                                    name='otp'
+                                                    style={{ height: '3.5rem', fontSize: '1.5rem' }}
+                                                    className={`otpInput form-control text-center mx-1 mt-2 ${!showOtpBoxes ? 'disabled-input' : ''}`}
+                                                    value={otpValues[index]}
+                                                    onChange={(e) => handleOtpChange(e.target.value, index)}
+                                                    onKeyDown={(e) => handleBackspace(e, index)}
+                                                    aria-label={`OTP input ${index + 1}`}
+                                                    disabled={!showOtpBoxes}
+                                                />
+                                            ))}
+                                        </div>
+                                        <div className="d-flex justify-content-between align-items-center mt-2">
+                                            <p
+                                                className="text-danger mb-0"
+                                                style={{ visibility: hideOtpExpireTimer ? "visible" : "hidden" }}>
+                                                {timer > 0 ? `OTP expires in ${timer} seconds.` : "OTP expired"}
+                                            </p>
+                                            <a
+                                                className={`text-decoration-none labelSubHeading float-end mt-2 ${(timer > 0) ? 'disabled-link' : ''}`}
+                                                style={{ cursor: (timer > 0) ? "not-allowed" : "pointer" }}
+                                                onClick={(timer > 0) ? undefined : handleRendOtpClick}
+                                            >
+                                                Resend OTP
+                                            </a>
+                                        </div>
 
-                                    <div className='text-center mt-5'>
-                                        <button className="pfRiskButtons py-2 px-5"
-                                            disabled={!isBtnAssessmentEnabled || timer < 1}
-                                        >
-                                            Verify Number
-                                        </button>
-                                    </div>
-                                </form>
+                                        <div className='text-center mt-5'>
+                                            <button className="pfRiskButtons py-2 px-5"
+                                                disabled={!isBtnAssessmentEnabled || timer < 1}
+                                            >
+                                                Verify Number
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
                                 <p className="text-center mt-3">
                                     {showMessage === 'User added successfully!!' ? <span className="text-success">User added successfully!!</span> :
                                         <span className="text-danger">{showMessage}</span>}

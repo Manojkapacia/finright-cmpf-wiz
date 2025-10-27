@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft } from 'react-bootstrap-icons';
 interface ClaimsProps {
     jsonData?:any 
-    onBack: () => void;
+    // onBack: () => void;
 }
 
-const Claims: React.FC<ClaimsProps> = ({ jsonData, onBack }) => {
+const Claims: React.FC<ClaimsProps> = ({ jsonData }) => {
     let claimsData = jsonData?.data?.claims;
     let summary = jsonData?.data?.claims?.summary;
 
@@ -44,9 +43,9 @@ const Claims: React.FC<ClaimsProps> = ({ jsonData, onBack }) => {
         <>
             {claimsData == null ? (
                 <>
-                    <button className="btn p-0 d-flex align-items-center mt-5 mb-md-3" onClick={onBack}>
+                    {/* <button className="btn p-0 d-flex align-items-center mt-5 mb-md-3" onClick={onBack}>
                         <ArrowLeft size={20} className="me-1" /> Back
-                    </button>
+                    </button> */}
                     <table className="table table-hover mt-5">
                         <tbody><tr><td colSpan={5} className="text-center">No Data Found!!</td></tr></tbody>
                     </table>
@@ -55,10 +54,10 @@ const Claims: React.FC<ClaimsProps> = ({ jsonData, onBack }) => {
 
                 :
                 (<>
-                    <button className="btn p-0 d-flex align-items-center mt-4 mb-md-3" onClick={onBack}>
+                    {/* <button className="btn p-0 d-flex align-items-center mt-4 mb-md-3">
                         <ArrowLeft size={20} className="me-1" /> Back
-                    </button>
-                    <div className="container my-4">
+                    </button> */}
+                    <div className="container-fluid my-4">
                         <h3>Claim Summary</h3>
                         <table className="table table-bordered table-striped">
                             <thead>
@@ -90,8 +89,7 @@ const Claims: React.FC<ClaimsProps> = ({ jsonData, onBack }) => {
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                    <div>
+                        
                         {/* Button Controls */}
                         <div className="btn-group mb-3">
                             <button className="btn btn-primary" onClick={() => setSelectedTab("Pending Claims")}>

@@ -142,7 +142,7 @@ const ResolveNowModel: React.FC<WithdrawTransferNowModelProps> = ({ setShowModal
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <CompleteProfileButton text="Withdraw Now" onClick={handleTalkToExpert} />
+            <CompleteProfileButton text="Resolve Now" onClick={handleTalkToExpert} />
           </motion.div>
         </motion.div>
       </motion.div>

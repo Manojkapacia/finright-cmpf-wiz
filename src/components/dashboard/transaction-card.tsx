@@ -23,16 +23,16 @@ const TransactionCard = (props: any) => {
 
   return (
 
-<div className="card border border-success mb-3 position-relative" 
-     style={{ border: "1px solid #34A853", cursor: 'pointer' }} 
+<div className="card  mb-3 position-relative" 
+     style={{ border: "1px solid #34A853", cursor: 'pointer',borderRadius:"1rem", backgroundColor: "#F7F9FF",}} 
      onClick={() => {
         setActiveTab("passbook");
         window.scrollTo({ top: 0, behavior: "smooth" });
      }}>
  <div className="card-body" >
-  <FaCheckCircle className="text-success fs-5 mb-1" style={{ marginTop: '-0.5rem' }} />
+  <FaCheckCircle className="fs-5 mb-1" style={{ marginTop: '-0.5rem',color:"#34A853" }} />
   <p className="cardTitle mb-0" style={{ fontWeight: 700 }}>
-    Last PF Contribution <span className="text-success"><span style={{ fontFamily: 'roboto' }}>{getLastContributionSum() || "--"}</span></span>
+    Last PF Contribution <span className="" ><span style={{ fontFamily: 'roboto',color:"#34A853" }}>{getLastContributionSum() || "--"}</span></span>
   </p>
   <p className="cardBody">Received on {props?.currentUanData?.reportData?.lastContribution?.wageMonth || "-"}</p>
   <p className="text-primary mt-3 mb-0" style={{ fontSize: "0.8125rem" }}>

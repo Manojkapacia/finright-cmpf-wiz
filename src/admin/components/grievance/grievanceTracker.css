@@ -1,0 +1,266 @@
+/* Custom styles for Grievance Tracker */
+
+/* Utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Dashboard Stats */
+.stat-card {
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-card:hover {
+  border-color: #007bff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.stat-card.stat-active {
+  border-color: #007bff;
+  background-color: #e7f3ff;
+  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #343a40;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Search Icon */
+/* .search-icon {
+  background-color: #f8f9fa;
+  border-right: 1px solid #ced4da;
+} */
+
+/* UAN cell styling */
+.uan-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+/* Status badges */
+.status-applied {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-progress {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-resolved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-closed {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Modal styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1055;
+  padding: 1rem;
+}
+
+.modal-dialog {
+  max-width: 700px;
+  width: 100%;
+}
+
+.modal-content {
+  border-radius: 1rem !important;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  background-color: #fff !important;
+}
+
+.modal-body {
+  padding: 1.5rem !important;  /* ✅ Space inside the modal */
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 0.5rem 0.5rem 0 0;
+  padding: 1.5rem !important;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #343a40;
+  margin: 0;
+}
+
+/* Form validation messages */
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.success-message {
+  color: #28a745;
+  font-size: 0.875rem;
+}
+
+/* Card title styling */
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #343a40;
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .display-5 {
+    font-size: 2rem;
+  }
+}
+
+/* Dark mode support */
+/* @media (prefers-color-scheme: dark) {
+  .grievance-tracker {
+    background-color: #212529 !important;
+  }
+  
+  .card {
+    background-color: #343a40;
+    border-color: #495057;
+  }
+  
+  .card-header {
+    background-color: #495057 !important;
+    border-color: #6c757d;
+  }
+  
+  .table-light {
+    background-color: #495057;
+    color: #fff;
+  }
+  
+  .stat-card.stat-active {
+    background-color: #1a4480;
+  }
+  
+  .stat-number {
+    color: #fff;
+  }
+  
+  .card-title,
+  .modal-title {
+    color: #fff;
+  }
+  
+  .text-dark {
+    color: #fff !important;
+  }
+} */
+
+/* Animation for stat cards */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.stat-card.stat-active {
+  animation: pulse 2s infinite;
+}
+
+/* Custom scrollbar for modal */
+.modal-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Focus states for accessibility */
+.form-control:focus,
+.form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Hover effects for interactive elements */
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.075);
+}
+
+/* Badge improvements */
+.badge {
+  font-size: 0.75rem !important;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.dropdown-menu {
+  min-width: 160px;
+  border-radius: 10px !important;
+}
+
+.dropdown-item:hover {
+  background-color: #e3dede !important;
+}

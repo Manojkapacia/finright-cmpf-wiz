@@ -1,0 +1,141 @@
+  
+  /* ✅ Header Section */
+  .check-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #e8eaf6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+  }
+  
+  .check-icon {
+    font-size: 40px;
+    color: #5e63d8;
+  }
+  
+  .booking-confirmed-main-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  
+  .booking-confirmed-subtitle {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+  
+  /* ✅ Booking Card */
+  .booking-card {
+    margin-top: -1rem;
+    background-color: #ffffff;
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+  box-shadow: 0px 0px 2px 0px #BCC2E6;
+    margin-bottom: 1.5rem;
+  }
+  
+  .detail-row {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1rem 0;
+    margin-bottom: 0;
+  }
+  
+  .detail-row.no-border {
+    border-bottom: none;
+  }
+  
+  .detail-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .detail-icon {
+    font-size: 1.125rem;
+    color: #4255CB;
+  }
+  
+  .detail-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 0.25rem;
+  }
+  
+  /* ✅ Button */
+  .booking-confirmed-btn {
+    font-family: 'Poppins';
+    background-color: #4255CB;
+    color: #ffffff;
+    border: 1px solid #304DFF;
+    border-radius: 10px;
+    padding: 0.875rem 2rem;
+    font-size: 1.5rem;
+    font-weight: 400;
+    width: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-bottom: 1.5rem;
+    line-height: 28px;
+  }
+  
+  .booking-confirmed-btn:hover {
+    background-color: #4a4fc4;
+  }
+  
+  /* ✅ Info Boxes */
+  .info-box {
+    background-color: #F6F9FF;
+    border-radius: 24px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+  box-shadow: 0px 0px 2px 0px #BCC2E6;
+    margin-bottom: 1.5rem;
+  }
+  
+  .info-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #4255CB;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .info-text {
+    font-size: 1rem;
+    color: #000000;
+    line-height: 1.6;
+    margin: 0;
+  }
+  
+  .info-link {
+    text-decoration: underline;
+    color: #000000;
+  }
+  
+  @media (max-width: 768px) {
+    .booking-confirmed-main-title {
+      font-size: 1.5rem !important;
+    }
+    .booking-confirmed-subtitle {
+      font-size: 0.875rem !important;
+    }
+    .booking-confirmed-btn {
+      padding: 0.75rem 1.5rem !important;
+      font-size: 0.9375rem !important;
+    }
+  }
+  

@@ -10,7 +10,6 @@ import ViewDetailModel from "./Models/ViewDetailModel";
 import ToWithdrawAmountModel from "./Models/ToWithdrawAnalysisModel";
 import { decryptData } from "../common/encryption-decryption";
 import ZohoModal from "./Models/ZohoModal";
-import { setClarityTag } from "../../helpers/ms-clarity";
 // import { ZohoLeadApi } from "../common/zoho-lead";
 import "../../styles/global.css"
 
@@ -92,7 +91,6 @@ export const SummaryCardOne = (props: any) => {
 
     const handleConnectNow = () => {
         setShowModal({ show: false, type: 'withdraw' });
-        setClarityTag("BUTTON_WITHDRAW", "vanity card");
         setTimeout(() => setZohoModalOpen(true), 300);
         // update Zoho Lead
         // zohoUpdateLead("Withdraw Now");

@@ -4,13 +4,10 @@ import styles from "../styles/dashboard.module.css";
 import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { FaChevronRight, FaChevronUp, FaCircleExclamation } from "react-icons/fa6";
 import ConnectwithExportModel from "./Models/ConnectwithExportModel";
-import { CustomButtonAll } from "../../helpers/helpers";
 import WithdrawTransferNowModel from "./Models/WithdrawTransferNowModel";
 import ConnectNowModel from "./Models/ConnectNowModel";
 import { decryptData } from "../common/encryption-decryption";
 import ResolveNowModel from "./Models/ResolveNowModel";
-import { setClarityTag } from "../../helpers/ms-clarity";
-import { ZohoLeadApi } from "../common/zoho-lead";
 
 const PaymentUnlockForPfReport = (props: any) => {
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -54,16 +51,6 @@ const toggleCardCollapse = (cardKey: string) => {
         setZohoUserID(zohoUser);
       }
     }, []);
-  
-    // const getZohoUserId = async (tag: any) => {
-    //   if (zohoUserId) {
-    //     const userId = zohoUserId
-    //     const sessionId = tag;
-    //     identifyUser(userId, sessionId);
-    //   }
-    // }
-
-  // Function to process data and set state
   const processReportData = () => {
     if (!props?.currentUanData?.reportData?.withdrawabilityCheckupReport)
       return;
@@ -157,55 +144,54 @@ const toggleCardCollapse = (cardKey: string) => {
   };
 
   // resolve now
-  const handleResolveNow = async () => {
-    setShowModal({ show: true, type: "resolvenow" });
-    zohoUpdateLead("Fix Issues");
-    setClarityTag("BUTTON_CONSULTATION", "Pf report Page");
-    // const userBalance = decryptData(localStorage.getItem("user_balance"))
-    // const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
-    // if (userBalance > 50000) {
-    //   try {
-    //     await post('lead/knowlarity-lead', { mobileNumber, tag: "Fix Issues" });
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
-  }
+  // const handleResolveNow = async () => {
+  //   setShowModal({ show: true, type: "resolvenow" });
+  //   zohoUpdateLead("Fix Issues");
+  //   const userBalance = decryptData(localStorage.getItem("user_balance"))
+  //   const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
+  //   if (userBalance > 50000) {
+  //     try {
+  //       await post('lead/knowlarity-lead', { mobileNumber, tag: "Fix Issues" });
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   }
+  // }
 
 
   // zoho lead creation
-  const zohoUpdateLead = async (intent: any) => {
-      const rawData = decryptData(localStorage.getItem("lead_data"));
-      const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
-      const userName = decryptData(localStorage.getItem("user_name"));
-      const userBalance = decryptData(localStorage.getItem("user_balance"))
+  // const zohoUpdateLead = async (intent: any) => {
+  //     const rawData = decryptData(localStorage.getItem("lead_data"));
+  //     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
+  //     const userName = decryptData(localStorage.getItem("user_name"));
+  //     const userBalance = decryptData(localStorage.getItem("user_balance"))
   
-      const newUser = rawData ? JSON.parse(rawData) : null;
-      const existUser = rawExistUser ? JSON.parse(rawExistUser) : null;
-      const user = existUser || newUser;
-      if(userBalance > 50000 && intent !== undefined && intent !== null && intent.trim() !== ""){
-        intent = `${intent} 50K`;
-      }
+  //     const newUser = rawData ? JSON.parse(rawData) : null;
+  //     const existUser = rawExistUser ? JSON.parse(rawExistUser) : null;
+  //     const user = existUser || newUser;
+  //     if(userBalance > 50000 && intent !== undefined && intent !== null && intent.trim() !== ""){
+  //       intent = `${intent} 50K`;
+  //     }
   
-      if (!user) {
-        return;
-      }
-      if (user) {
-        const zohoReqData = {
-          Last_Name: userName || props?.currentUanData?.rawData?.data?.profile?.fullName || user?.Last_Name,
-          Mobile: user?.Mobile,
-          Email: user?.Email,
-          Wants_To: user?.Wants_To,
-          Lead_Status: existUser ? "Reopen" : user?.Lead_Status,
-          Lead_Source: user?.Lead_Source,
-          Campaign_Id: user?.Campaign_Id,
-          CheckMyPF_Status: props?.currentUanData?.rawData?.isScrappedFully ? "Full Report" : "Partial Report",
-          CheckMyPF_Intent: intent,
-          Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
-        };
-        ZohoLeadApi(zohoReqData);
-      }
-    }
+  //     if (!user) {
+  //       return;
+  //     }
+  //     if (user) {
+  //       const zohoReqData = {
+  //         Last_Name: userName || props?.currentUanData?.rawData?.data?.profile?.fullName || user?.Last_Name,
+  //         Mobile: user?.Mobile,
+  //         Email: user?.Email,
+  //         Wants_To: user?.Wants_To,
+  //         Lead_Status: existUser ? "Reopen" : user?.Lead_Status,
+  //         Lead_Source: user?.Lead_Source,
+  //         Campaign_Id: user?.Campaign_Id,
+  //         CheckMyPF_Status: props?.currentUanData?.rawData?.isScrappedFully ? "Full Report" : "Partial Report",
+  //         CheckMyPF_Intent: intent,
+  //         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
+  //       };
+  //       ZohoLeadApi(zohoReqData);
+  //     }
+  //   }
 
 
   return (
@@ -244,8 +230,8 @@ const toggleCardCollapse = (cardKey: string) => {
           {/* updated design */}
           {/* kyc here.. */}
           <div
-            className="bg-white shadow-sm mt-3"
-            style={{ borderRadius: "1rem", padding: "0.9375rem 1.25rem" }}
+            className="shadow-sm mt-3"
+            style={{ borderRadius: "1rem",backgroundColor: "#F7F9FF", padding: "0.9375rem 1.25rem" }}
           >
             {/* Card Header */}
             <div
@@ -493,7 +479,7 @@ const toggleCardCollapse = (cardKey: string) => {
                     </span>
                   </div>
                   <div className="border-bottom mb-1 py-1"></div>
-                  {(props?.currentUanData?.reportData?.totalIssuesFound?.critical > 0 ||
+                  {/* {(props?.currentUanData?.reportData?.totalIssuesFound?.critical > 0 ||
                     props?.currentUanData?.reportData?.totalIssuesFound?.medium > 0) && (
                       <div className="mt-3">
                         <CustomButtonAll
@@ -502,7 +488,7 @@ const toggleCardCollapse = (cardKey: string) => {
                           onClick={handleResolveNow}
                         />
                       </div>
-                    )}
+                    )} */}
                 </div>
               </div>
             )}
@@ -510,8 +496,8 @@ const toggleCardCollapse = (cardKey: string) => {
 
           {/* employee history */}
           <div
-            className="bg-white shadow-sm mt-3"
-            style={{ borderRadius: "1rem", padding: "0.9375rem 1.25rem" }}
+            className="shadow-sm mt-3"
+            style={{ borderRadius: "1rem",backgroundColor: "#F7F9FF", padding: "0.9375rem 1.25rem" }}
           >
             <div
               className="d-flex justify-content-between align-items-center"
@@ -754,8 +740,8 @@ const toggleCardCollapse = (cardKey: string) => {
 
           {/* pf contribution */}
           <div
-            className="bg-white shadow-sm mt-3"
-            style={{ borderRadius: "1rem", padding: "0.9375rem 1.25rem" }}
+            className="shadow-sm mt-3"
+            style={{ borderRadius: "1rem",backgroundColor: "#F7F9FF", padding: "0.9375rem 1.25rem" }}
           >
             <div
               className="d-flex justify-content-between align-items-center"
@@ -920,8 +906,8 @@ const toggleCardCollapse = (cardKey: string) => {
 
           {/* eps pension */}
           <div
-            className="bg-white shadow-sm mt-3"
-            style={{ borderRadius: "1rem", padding: "0.9375rem 1.25rem" }}
+            className="shadow-sm mt-3"
+            style={{ borderRadius: "1rem",backgroundColor: "#F7F9FF", padding: "0.9375rem 1.25rem" }}
           >
             <div
               className="d-flex justify-content-between align-items-center"
@@ -1084,9 +1070,9 @@ const toggleCardCollapse = (cardKey: string) => {
 
           {/* transfer record */}
           <div
-            className="bg-white mt-3 shadow-sm mb-2"
+            className="mt-3 shadow-sm mb-2"
             style={{
-              borderRadius: "1rem",
+              borderRadius: "1rem",backgroundColor: "#F7F9FF",
               padding: "0.9375rem 1.25rem",
             }}
           >

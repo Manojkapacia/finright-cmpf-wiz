@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs';
 import styles from './styles/kyc.module.css'
@@ -6,7 +6,6 @@ import { post } from '../common/api';
 import { CircularLoading } from '../user-registeration/Loader';
 import ToastMessage from '../common/toast-message';
 import { decryptData, encryptData } from '../common/encryption-decryption';
-import { setClarityTag } from '../../helpers/ms-clarity';
 import "../../App.css"
 
 function KycDetailsBank() {
@@ -19,10 +18,61 @@ function KycDetailsBank() {
     const [showIFSCNumber, setIFSCNumber] = useState(false);
     const [isLoading, setIsLoading] = useState(false)
     const [message, setMessage] = useState({ type: '', content: '' })
+    // const [BankStatus, setBankStatus] = useState({
+    //     bankAccountNumber: true,
+    //     bankIFSC: true
+    // });
+
+    
+    // Helper to check invalid values
+    const isInvalidValue = (val: any) => ["", "N/A", "NA", "-", "--"].includes(val);
+
+    
+    const initialBankAccount = currentUanData?.rawData?.data?.profile?.kycDetails?.bankAccountNumber || "";
+    const initialIFSC = currentUanData?.rawData?.data?.profile?.kycDetails?.bankIFSC || "";
+
     const [BankStatus, setBankStatus] = useState({
-        bankAccountNumber: true,
-        bankIFSC: true
+        bankAccountNumber: !isInvalidValue(initialBankAccount),
+        bankIFSC: !isInvalidValue(initialIFSC),
     });
+
+    const [autoTriggered, setAutoTriggered] = useState(false);
+
+    useEffect(() => {
+        if (isInvalidValue(initialBankAccount) && isInvalidValue(initialIFSC) && !autoTriggered) {
+            setBankStatus({
+                bankAccountNumber: false,
+                bankIFSC: false,
+            });
+            setAutoTriggered(true); // prevent re-trigger
+            handleAutoContinue();
+        }
+    }, [initialBankAccount, initialIFSC, autoTriggered]);
+
+    const handleAutoContinue = async () => {
+        localStorage.setItem("is_scrapped_fully", encryptData("true"));
+        setIsLoading(true);
+        const mergedStatues = { ...kycStatus, ...BankStatus };
+        const dataToSend = currentEmploymentUanData?.length
+            ? { kycStatus: mergedStatues, type: 'full', uan: processedUan, userMobileNumber: mobile_number, ...currentEmploymentUanData[0] }
+            : { kycStatus: mergedStatues, type: 'full', uan: processedUan, userMobileNumber: mobile_number, ...currentEmploymentUanData };
+        try {
+            const withdrawabilityCheckUpReportResponse = await post('withdrawability-check', dataToSend);
+            if (withdrawabilityCheckUpReportResponse) {
+                setIsLoading(false);
+                navigate('/dashboard', { state: { mobile_number, processedUan: processedUan ? processedUan : decryptData(localStorage.getItem("user_uan")), type } });
+            } else {
+                setIsLoading(false);
+                navigate('/epfo-down');
+                setMessage({ type: 'error', content: "Oops!! Some issue processing RULE ENGINE at moment!!" });
+            }
+        } catch (error) {
+            setIsLoading(false);
+            navigate('/epfo-down');
+            setMessage({ type: 'error', content: "Oops!! Some issue processing RULE ENGINE at moment!!" });
+        }
+    };
+
 
     const handleCheckboxChange = (field: any) => {
         setBankStatus((prev: any) => ({
@@ -54,24 +104,22 @@ function KycDetailsBank() {
     }
 
     const handleIncorrect = () => {
-        setClarityTag("BUTTON_INCURRECT", "Inside Kyc page advance details");
-        const fieldsToCheck = ['bankAccountNumber', 'bankIFSC'];
-        setBankStatus((prev: any) => {
-            const updatedStatus = { ...prev };
-            fieldsToCheck.forEach((field: any) => {
-                if (currentUanData?.rawData?.data?.profile?.kycDetails?.[field] === '-' || currentUanData?.rawData?.data?.profile?.kycDetails?.[field] === 'N/A') {
-                    updatedStatus[field] = false;
-                }
-            });
-            return updatedStatus;
-        });
+        // const fieldsToCheck = ['bankAccountNumber', 'bankIFSC'];
+        // setBankStatus((prev: any) => {
+        //     const updatedStatus = { ...prev };
+        //     fieldsToCheck.forEach((field: any) => {
+        //         if (currentUanData?.rawData?.data?.profile?.kycDetails?.[field] === '-' || currentUanData?.rawData?.data?.profile?.kycDetails?.[field] === 'N/A') {
+        //             updatedStatus[field] = false;
+        //         }
+        //     });
+        //     return updatedStatus;
+        // });
 
         setShowCheckbox(true)
         setShowContinueButton(true);
     };
 
     const handleContinueBtn = async () => {   
-        setClarityTag("BUTTON_CONTINUE", "Inside Kyc page advance details");     
         localStorage.setItem("is_scrapped_fully", encryptData("true"))
         setIsLoading(true)
         const mergedStatues = { ...kycStatus, ...BankStatus }
@@ -94,18 +142,17 @@ function KycDetailsBank() {
     };
 
     const handleCorrect = async () => {
-        setClarityTag("BUTTON_CURRECT", "Inside Kyc page advance details");
         localStorage.setItem("is_scrapped_fully", encryptData("true"))
-        const fieldsToCheck = ['bankAccountNumber', 'bankIFSC'];
-        setBankStatus((prev: any) => {
-            const updatedStatus = { ...prev };
-            fieldsToCheck.forEach((field) => {
-                if (currentUanData?.rawData?.data?.kycDetails?.[field] === '-') {
-                    updatedStatus[field] = false;
-                }
-            });
-            return updatedStatus;
-        });
+        // const fieldsToCheck = ['bankAccountNumber', 'bankIFSC'];
+        // setBankStatus((prev: any) => {
+        //     const updatedStatus = { ...prev };
+        //     fieldsToCheck.forEach((field) => {
+        //         if (currentUanData?.rawData?.data?.kycDetails?.[field] === '-') {
+        //             updatedStatus[field] = false;
+        //         }
+        //     });
+        //     return updatedStatus;
+        // });
 
         setShowContinueButton(false);
         const mergedStatues = { ...kycStatus, ...BankStatus }
@@ -148,7 +195,8 @@ function KycDetailsBank() {
                                     <div className={`card shadow-sm mx-lg-5`}>
                                         <div className="card-body">
                                             <div className='row py-4 px-2 my-4'>
-                                                <div className='col-md-6'>
+                                                 {!isInvalidValue(initialBankAccount) && (
+                                                    <div className='col-md-6'>
                                                     <label className={`cardTitle mt-3`}>Bank A/C number</label>
 
                                                     <div className="d-flex justify-content-between align-items-center">
@@ -170,7 +218,10 @@ function KycDetailsBank() {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className='col-md-6'>
+                                                 )}
+                                                
+                                                 {!isInvalidValue(initialIFSC) && (
+                                                    <div className='col-md-6'>
                                                     <label className={`cardTitle mt-3`}>IFSC Number: </label>
                                                     <div className="d-flex justify-content-between align-items-center">
                                                         <div className={`cardBody form-check-label  fw-normal mb-0`}>
@@ -190,6 +241,7 @@ function KycDetailsBank() {
                                                     )}
                                                     </div>
                                                 </div>
+                                                 )}
                                             </div>
                                         </div>
                                     </div>

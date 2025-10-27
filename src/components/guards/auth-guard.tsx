@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { decryptData } from "../common/encryption-decryption";
+import { decryptData, encryptData } from "../common/encryption-decryption";
 import MESSAGES from "../constant/message";
 
 interface AuthGuardProps {
@@ -19,13 +19,19 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         const queryParams = new URLSearchParams(window.location.search);
         const encodedMobileNumber = queryParams.get("mobile_number");
         const extractedMobile = encodedMobileNumber ? atob(encodedMobileNumber) : "";
-        // console.log(isAuthenticated, extractedMobile, storedMobile)
-        // If no user is logged in or the mobile number has changed, log out
-        if (!isAuthenticated || (extractedMobile && storedMobile !== extractedMobile)) {
+
+        // Only redirect if explicitly logged out or mobile number changes
+        if (!isAuthenticated && !storedMobile) {
             localStorage.clear()
             window.location.href = MESSAGES.CHEKC_MY_PF_URL; // Redirect to login
             return;
         }
+        
+        // If mobile number changes, update it instead of logging out
+        if (extractedMobile && storedMobile !== extractedMobile) {
+            localStorage.setItem("user_mobile", encryptData(extractedMobile));
+        }
+        
         setIsVerified(true);
     }, []);
 
@@ -40,13 +46,16 @@ export const GuestGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const location = useLocation();
 
     // Get stored session data
-    const storedMobile = decryptData(localStorage.getItem("user_mobile"));
+    const storedMobileRaw = decryptData(localStorage.getItem("user_mobile"));
+    const storedMobile = storedMobileRaw?.replace(/^\+91/, '');
+
     const isAuthenticated = !!decryptData(localStorage.getItem("is_logged_in_user"));
 
     // Get the latest mobile number from the external app
     const queryParams = new URLSearchParams(window.location.search);
     const encodedMobileNumber = queryParams.get("mobile_number");
-    const extractedMobile = encodedMobileNumber ? atob(encodedMobileNumber) : "";
+    const extractedMobileRaw = encodedMobileNumber ? atob(encodedMobileNumber) : "";
+    const extractedMobile = extractedMobileRaw?.replace(/^\+91/, '');
 
     // Redirect to external website if the route is "/" and no mobile number is found
     if (location.pathname === "/" && !extractedMobile) {
@@ -54,10 +63,11 @@ export const GuestGuard: React.FC<AuthGuardProps> = ({ children }) => {
         window.location.href = MESSAGES.CHEKC_MY_PF_URL; // Redirect to the required website
         return null;
     }
-    // Redirect to external website if the route is "/" and no mobile number is found
-    // if (location.pathname === "/employment-status" && !isScrappedFully) {
-    //     return 
-    // }
+    if ((location.pathname === "/call-booking/otp" || location.pathname === "/payment-auth/otp") && !storedMobile) {
+        localStorage.clear()
+        window.location.href = MESSAGES.CHEKC_MY_PF_URL; // Redirect to the required website
+        return null;
+    }
     // If the user is already logged in AND the mobile number matches, send to dashboard
     if (isAuthenticated && ((storedMobile === extractedMobile) || (extractedMobile === "" && storedMobile))) {
         return <Navigate to="/dashboard" replace />;

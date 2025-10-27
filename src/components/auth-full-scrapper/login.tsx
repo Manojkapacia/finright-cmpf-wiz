@@ -7,23 +7,22 @@ import thumbPrimary from "./../../assets/thumbPrimary.svg";
 import thumbSuccess from "./../../assets/thumbSuccess.svg";
 import thumbError from "./../../assets/thumbError.svg";
 import { ExtractMobile } from "../common/extract-mobile";
-import { login } from "../common/api";
-import { setClarityTag } from "../../helpers/ms-clarity";
+import { get, login, put } from "../common/api";
 import { useForm } from "react-hook-form";
 import ToastMessage from "../common/toast-message";
 import { buildStyles, CircularProgressbar } from "react-circular-progressbar";
 import { FaEye, FaEyeSlash } from "react-icons/fa6";
-import { decryptData } from "../common/encryption-decryption";
-// import { ZohoLeadApi } from "../common/zoho-lead";
-// import { decryptData } from "../common/encryption-decryption";
+import { decryptData, encryptData } from "../common/encryption-decryption";
+import MESSAGES from "../constant/message";
+import { ZohoLeadApi } from "../common/zoho-lead";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
 
 
 const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const { type = 'full', currentUan,dashboard} = location.state || {}
-
+  const { type = 'full', currentUan, dashboard, password} = location.state || {}
   const [loading, setLoading] = useState(false);
 
   const [color, setColor] = useState("#004B9A");
@@ -35,6 +34,10 @@ const Login = () => {
   const [breakCount, setBreakCount] = useState(0);
   const [, setBreakCount2] = useState(0);
   const [mobile_number, setMobileNumber] = useState()
+  const [credentials, setCredentials] = useState({ uan: "", password: ""});
+  const [isOtpBypassEnabled, setIsOtpBypassEnabled] = useState(false);
+  const [otpSuccessiveEnable, setotpSuccessiveEnable] = useState(false);
+  const isMessageActive = useRef(false);
 
   interface FormData {
     uan: string;
@@ -45,42 +48,36 @@ const Login = () => {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>();
+
+  useEffect(() => {
+    if (message.type) {
+      isMessageActive.current = true; // Set active state when a message is displayed
+      const timer = setTimeout(() => {
+          setMessage({ type: "", content: "" });
+          isMessageActive.current = false; // Reset active state
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const getToggleValue = async () => {
+    try {
+      const response = await get("/data/toggle/keys");
+      const otpByPassToggle = response?.allTogglers?.find((item:any) => item.type === "otp-bypass");
+      const otpSuccessiveToggal = response?.allTogglers?.find((item:any) => item.type === "epfo_status");
+      setIsOtpBypassEnabled(otpByPassToggle?.isEnabled);
+      setotpSuccessiveEnable(otpSuccessiveToggal?.isEnabled)
+    } catch (err) { }
+  }
 
   useEffect(()=>{
     const user_mobile = decryptData(localStorage.getItem('user_mobile'));
     setMobileNumber(user_mobile);
+    getToggleValue()
   },[]);
-
-  // const zohoUpdateLead = async (status: any, intent: any) => {
-  //     const rawData = decryptData(localStorage.getItem("lead_data"));
-  //     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
-  //     const userName = decryptData(localStorage.getItem("user_name"))
-  
-  //     const newUser = rawData ? JSON.parse(rawData) : null;
-  //     const existUser = rawExistUser ? JSON.parse(rawExistUser) : null;
-  //     const user = existUser || newUser;
-  
-  //     if (!user) {
-  //       return;
-  //     }
-  
-  //     if (user) {
-  //       const zohoReqData = {
-  //         Last_Name: userName || user?.Last_Name,
-  //         Mobile: user?.Mobile,
-  //         Email: user?.Email,
-  //         Wants_To: user?.Wants_To,
-  //         Lead_Status: user?.Lead_Status,
-  //         Lead_Source: user?.Lead_Source,
-  //         Campaign_Id: user?.Campaign_Id,
-  //         CheckMyPF_Status: status,
-  //         CheckMyPF_Intent: intent
-  //       };
-  //       ZohoLeadApi(zohoReqData);
-  //     }
-  //   }
 
   const LoginMessages = {
     required: {
@@ -96,34 +93,102 @@ const Login = () => {
     },
   };
 
-
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
+  useEffect(() => {
+    if (currentUan?.length === 12 && password?.length > 0) { 
+      setValue("uan", currentUan, { shouldValidate: false });
+      setValue("password", password, { shouldValidate: false });
+
+      onSubmit({ uan: currentUan, password: password } as FormData);
+    }
+  }, []);
+
   const onSubmit = async (data: FormData) => {
-    setClarityTag("BUTTON_LOGIN", "Login UAN and Password");
+    setMessage({ type: "", content: "" });
     const uanToUse = currentUan?.length === 12 ? currentUan : data.uan;
     if (uanToUse && data.password) {
       try {
         setLoading(true);
         startProgress();
-        const result = await login(uanToUse, data.password.trim(),mobile_number);
+        setCredentials({ uan: uanToUse, password: data.password })
+        const result = await login(uanToUse, data.password.trim(), mobile_number);
         if (result.status === 400) {
           setMessage({ type: "error", content: result.message });
           setColor('#FF0000');
           setImageSrc(thumbError);
           setTimeout(() => {
             setLoading(false);
-          }, 1500);
-
-        } else {
-          setColor('green');
-          setImageSrc(thumbSuccess);
-          setTimeout(() => {
-            const messageMobile = ExtractMobile(result.message)
-            navigate("/submit-otp-scrapper", { state: { uan:uanToUse , password: data.password.trim(), mobile_number, messageMobile, type, dashboard} });
-            setLoading(false);
-          }, 1500);
+          }, 2000);
+          return
         }
+
+        // 🕒 POLLING STARTS HERE
+        let retries = 0;
+        const maxRetries = 60; // ~3 minutes if interval is 4s
+        const pollInterval = 3000;
+
+        const pollStatus = async () => {
+          try {
+            const loginStatusResponse = await get(`/auth/login-status?uan=${uanToUse}`);
+
+            if (loginStatusResponse?.data?.status === "success") {
+              setColor("green");
+              setImageSrc(thumbSuccess);
+              setTimeout(() => {
+                setLoading(false);
+                if (isOtpBypassEnabled) {
+                  handleByPassOtp(uanToUse);
+                } else {
+                  trackClarityEvent(MESSAGES.ClarityEvents.SCRAPPER_OTP_SENT);
+                  const messageMobile = ExtractMobile(result?.message);
+                  navigate("/submit-otp-scrapper", {
+                    state: {
+                      uan: uanToUse,
+                      password: data.password.trim(),
+                      mobile_number,
+                      messageMobile,
+                      type,
+                      dashboard,
+                    },
+                  });
+                }
+              }, 1000);
+            } else if (loginStatusResponse?.data?.status === "failed") {
+              setMessage({ type: "error", content: loginStatusResponse?.data?.message || MESSAGES.error.generic });
+              setColor('#FF0000');
+              setImageSrc(thumbError);
+              setTimeout(() => {
+                setLoading(false);
+              }, 3000);
+              if (loginStatusResponse?.data?.statusCode >= 500) {
+                navigate("/epfo-down")
+              }
+            } else {
+              // Still pending or processing
+              if (++retries < maxRetries) {
+                setTimeout(pollStatus, pollInterval);
+              } else {
+                // setMessage({ type: "error", content: MESSAGES.error.generic });
+                setColor("#FF0000");
+                setImageSrc(thumbError);
+                setTimeout(() => setLoading(false), 500);
+                navigate("/epfo-down")
+              }
+            }
+          } catch (err:any) {
+            setMessage({ type: "error", content: err?.message });
+            setColor('#FF0000');
+            setImageSrc(thumbError);
+            setTimeout(() => {
+              setLoading(false);
+            }, 3000);
+            navigate("/epfo-down")
+          }
+        };
+
+        // Start first poll
+        pollStatus();
       } catch (error: any) {
         setMessage({ type: "error", content: error?.status === 401 ? "Invalid Credentials" : error?.message });
         setColor('#FF0000');
@@ -155,7 +220,6 @@ const Login = () => {
     }, 100);
   };
 
-
   useEffect(() => {
     const height = window.innerHeight;
     if (height > 700) {
@@ -180,6 +244,7 @@ const Login = () => {
   const handleConnectNow = () => {
     navigate('/how-can-help', {state: {currentUan}})
   }
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 550);
 
   useEffect(() => {
@@ -192,6 +257,183 @@ const Login = () => {
     // Clean up on unmount
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+ 
+  const zohoUpdateLead = async (status:any) => {
+    const rawData = decryptData(localStorage.getItem("lead_data"));
+    const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
+    const userName = decryptData(localStorage.getItem("user_name"))
+    const userBalance = decryptData(localStorage.getItem("user_balance"))
+
+    const newUser = rawData ? JSON.parse(rawData) : null;
+    const existUser = rawExistUser ? JSON.parse(rawExistUser) : null;
+    const user = existUser || newUser;
+    if (
+      userBalance > 50000 &&
+      user?.CheckMyPF_Intent &&
+      user.CheckMyPF_Intent.toLowerCase() !== "none"
+    ) {
+      let intent = user.CheckMyPF_Intent;
+    
+      if (intent.includes("1lakh")) {
+        intent = intent.replace(/1lakh/gi, "").trim();
+      }
+    
+      if (!intent.includes("50K")) {
+        intent = intent.length ? `${intent} 50K` : "";
+      }
+    
+      user.CheckMyPF_Intent = intent;
+    }
+    
+    if (!user) {
+      return;
+    }
+    
+    if (user) {
+      const zohoReqData = {
+        Last_Name: userName || user?.Last_Name,
+        Mobile: user?.Mobile,
+        Email: user?.Email,
+        Wants_To: user?.Wants_To,
+        Lead_Status: user?.Lead_Status,
+        Lead_Source: user?.Lead_Source,
+        Campaign_Id: user?.Campaign_Id,
+        CheckMyPF_Status: status === "Full Report" ? "Full Report" : existUser && existUser !== "" ? user?.CheckMyPF_Status : status,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "",  
+        Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
+      };
+      ZohoLeadApi(zohoReqData);
+    }
+  }
+
+  const handleByPassOtp = async (uan:any) => {
+    try {
+        // to update the password
+        await put('auth/update-profile', { uan, password: credentials.password });
+
+        // call fetch data by UAN api 
+        const responseUan = await get('/data/fetchByUan/' + uan);        
+
+        if (responseUan?.rawData?.data?.error && responseUan.rawData.data.error.trim() !== "") {
+          const errorMsg = "Password Expired!! Please reset on EPFO portal and try again re-login here after 6 hrs post resetting the password";
+          setMessage({ type: "error", content: errorMsg });
+          setColor('#FF0000');
+          setImageSrc(thumbError);
+          setTimeout(() => {
+            navigate("/login-uan");
+          }, 5000);
+          return;
+        }
+
+        // return
+        setColor("green");
+        setImageSrc(thumbSuccess);
+        localStorage.setItem("is_logged_in_user", encryptData("true"))
+        localStorage.setItem("user_uan", encryptData(uan))
+        localStorage.setItem("user_mobile", encryptData(mobile_number))
+
+
+        if (!responseUan) {
+          setLoading(false);
+          zohoUpdateLead("EPFO down")
+          setMessage({ type: "error", content: MESSAGES.error.generic });
+        } else {
+          setLoading(false);
+          if(!responseUan?.rawData?.data?.home || !responseUan?.rawData?.data?.serviceHistory?.history || !responseUan?.rawData?.data?.passbooks || !responseUan?.rawData?.data?.profile || !responseUan?.rawData?.data?.claims) {
+            setMessage({ type: "error", content: "Seems like there is some issue in getting your data from EPFO. Please try again later!!" });          
+            return
+          }
+          const employmentDataSet = [{
+            establishment_name: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.establishmentName,
+            currentOrganizationMemberId: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId,
+            userEmpHistoryCorrect: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+            userStillWorkingInOrganization: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+            serviceHistory: responseUan?.rawData?.data?.serviceHistory?.history,
+            isFromFullScrapper: true
+          }]
+          zohoUpdateLead("Full Report")
+          if (type.toLowerCase() === 'full') {
+            navigate("/employment-status", { state: { mobile_number, processedUan: uan, currentEmploymentUanData: employmentDataSet, type } });
+          } else {
+            navigate("/kyc-details", { state: { processedUan: uan, mobile_number, currentUanData: responseUan, currentEmploymentUanData: employmentDataSet, type } });
+          }
+        }
+      } catch (error: any) {
+        setLoading(false)
+        if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+          console.warn('Server Connection Error:', {
+            error: error.message,
+            code: error.code
+          });
+          setColor('#FF0000');
+          setImageSrc(thumbError);
+          setMessage({type: "error", content: 'Server connection failed. Please check your connection.'});
+          setTimeout(() => {
+            setLoading(false);
+          }, 3000);
+          setMessage({
+            type: "error",
+            content: "Unable to connect to server. Please check your connection or try again later."
+          });
+          return;
+        }
+
+        setColor('#FF0000');
+        setImageSrc(thumbError);
+        setMessage({type: "error", content: 'Something went wrong, please try again'});
+        setTimeout(() => {
+          setLoading(false);
+        }, 3000);
+
+        // Handle specific status codes
+        switch (error.status) {
+          case 503:
+            // Handle service unavailable
+            const errorCode = error?.errorCode;
+            if (errorCode === "SCRAPPER_DOWN") {
+              setMessage({
+                type: "error",
+                content: "Service is temporarily unavailable. Please try again later.",
+              });
+            } else if (errorCode === "NETWORK_ERROR") {
+              setMessage({
+                type: "error",
+                content: "Unable to connect to the service. Please check your connection.",
+              });
+            } else {
+              // Only navigate to epfo-down for 503 without error code (EPFO down)
+              navigate("/epfo-down");
+            }
+            break;
+
+          case 500:
+            // Handle internal server error
+            setMessage({
+              type: "error",
+              content: "An internal server error occurred. Please try again later.",
+            });
+            break;
+
+          case 400:
+            setMessage({
+              type: "error",
+              content: MESSAGES.error.invalidOtpServer
+            });
+            break;
+
+          default:
+            setMessage({
+              type: "error",
+              content: error.message || MESSAGES.error.generic
+            });
+        }
+      }
+  };
+
   return (
     <>
       {loading && (
@@ -223,7 +465,11 @@ const Login = () => {
             </div>
             <p className={`${styles.loadertext}`}>
               {imageSrc === thumbPrimary &&
-                <span>Verifying Credentials, Please Wait...</span>
+                <span>
+                  {isOtpBypassEnabled
+                    ? 'Verifying and Fetching Details, Please Wait...'
+                    : 'Verifying Details, Please Wait...'}
+                </span>  
               }
               {imageSrc === thumbSuccess &&
                 <span>Success!</span>
@@ -254,15 +500,43 @@ const Login = () => {
                  Link your EPFO passbook to get insights to your PF fund
                </p> */}
           <p
-            className={`title text-dark text-start ${isMobile ? "mt-5" : ""}`}
+            className={`title text-dark text-start ${isMobile ? "mt-4" : ""}`}
             style={{ fontSize: "1.69rem", fontWeight: "500" }}
           >
             Verify with EPFO Password
           </p>
-
+          {!otpSuccessiveEnable &&
+            <div className="mt-3">
+              <div
+                className="card border-0 shadow-sm"
+                style={{
+                  backgroundColor: "#FFEBEA",
+                  borderRadius: "1rem",
+                  padding: "0.3125rem 0.625rem", // 5px top/bottom, 10px left/right
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.625rem", // 10px
+                }}
+              >
+                <span
+                  style={{
+                    color: "#CD1E14",
+                    fontSize: "0.6875rem",
+                    fontWeight: 500,
+                    textAlign: "center",
+                  }}
+                >
+                  EPFO servers are facing high fail rate
+                </span>
+              </div>
+            </div>
+          }
+            
         </div>
 
-        <div className=" w-100 px-3" style={{ maxWidth: "400px" }}>
+        <div className="w-100 px-3" style={{ maxWidth: "400px" }}>
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* <div className="text-center">
                    <img

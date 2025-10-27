@@ -220,19 +220,19 @@ const MyPdfDocument = (props: any) => {
     };
 
     const getSelectedSubCategoryData = (subCategory:any) => {
-        const result:any = categoryDetailsFromReport && categoryDetailsFromReport.find((item:any) => item.subCategory.toUpperCase() === subCategory.toUpperCase())
+        const result:any = categoryDetailsFromReport && categoryDetailsFromReport?.find((item:any) => item.subCategory.toUpperCase() === subCategory.toUpperCase())
         return result;
     }
     const processReportData = () => {
         if (!props?.currentUanData?.reportData?.withdrawabilityCheckupReport) return;
 
-        const processedData = props?.currentUanData?.reportData.withdrawabilityCheckupReport.map((category:any) => {
-            return category.subCategory.map((sub:any) => ({
-                category: category.category,
-                subCategory: sub.name,
-                criticalCount: sub.critical,
-                mediumCount: sub.medium,
-                totalErrorCount: sub.critical + sub.medium,
+        const processedData = props?.currentUanData?.reportData?.withdrawabilityCheckupReport?.map((category:any) => {
+            return category?.subCategory?.map((sub:any) => ({
+                category: category?.category,
+                subCategory: sub?.name,
+                criticalCount: sub?.critical,
+                mediumCount: sub?.medium,
+                totalErrorCount: sub?.critical + sub?.medium,
                 consolidatedErrorMessage: sub?.errorMessages?.filter((msg:any) => msg)
                     ?.map((msg:any, index:any) => (
                         <span

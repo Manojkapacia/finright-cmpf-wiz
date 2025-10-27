@@ -1,17 +1,16 @@
 import React from "react";
-import { Eye, EyeSlash, ArrowLeft } from "react-bootstrap-icons";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 interface ServiceHistoryProps {
     jsonData: any;
-    onBack: () => void;
+    // onBack: () => void;
 }
 
-const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => {
+const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData }) => {
     // const data = getData.data.serviceHistory.history;
     const data = jsonData?.data?.serviceHistory?.history;
     const overView = jsonData?.data?.serviceHistory?.overview;
     const balance = jsonData?.data?.home
     const passbooks = jsonData?.data?.passbooks
-    console.log(jsonData)
     // const handleOpenModal = (details) => {
     //     setCurrentDetails(details);
     // };
@@ -108,7 +107,6 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
         return "N/A";
     };
 
-    console.log(getLastContributionMonth('BGBNG00268580000268966'), "last month")
     const [expandedRows, setExpandedRows] = React.useState(data?.map((_: any, index: any) => index));
     const toggleRow = (index: any) => {
         setExpandedRows((prevState: any) => {
@@ -123,22 +121,23 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
 
 
     return (
-        <div className="container">
-            <div className="row">
+        <div className="container-fluid" style={{  background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"}}>
+            {/* <div className="row">
                 <div className="col-md-10 offset-md-1">
                     <button className="btn p-0 d-flex align-items-center mt-5" onClick={onBack}>
                         <ArrowLeft size={20} className="me-1" /> Back
                     </button>
                 </div>
-            </div>
+            </div> */}
             {/* new one below */}
+            <div className="row">   
             {(data == null && overView == null) ?
                 <table className="table table-hover mt-5">
                     <tbody><tr><td colSpan={5} className="text-center">No Data Found!!</td></tr></tbody>
                 </table> :
                 <>
                     <div className="row">
-                        <div className="col-md-10 offset-md-1 mt-3">
+                        <div className="col-md-12 mt-3">
 
                             <h3>Balance </h3>
                             <table className="table table-hover">
@@ -222,7 +221,7 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
                     </div>
 
                     <div className="row">
-                        <div className="col-md-6 offset-md-1 mt-3">
+                        <div className="col-md-6  mt-3">
                             <h3>Summary </h3>
                             <table className="table table-hover">
                                 <thead>
@@ -250,7 +249,7 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
                     </div>
 
                     <div className="row">
-                        <div className="col-md-10 offset-md-1 mt-3">
+                        <div className="col-md-12 mt-3">
                             <h3>History </h3>
                             <table className="table table-hover">
                                 <thead>
@@ -298,7 +297,7 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
                     </div>
                     {/* Accordions Section */}
                     <div className="row mt-3">
-                        <div className="col-md-10 offset-md-1">
+                        <div className="col-md-12">
                             {expandedRows.map((index: any) => {
                                 const item = data[index];
                                 return (
@@ -322,29 +321,7 @@ const ServiceHistory: React.FC<ServiceHistoryProps> = ({ jsonData, onBack }) => 
                     </div>
                 </>
             }
-
-            {/* <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                <div className="modal-dialog">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title" id="exampleModalLabel">Details</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div className="modal-body">
-                            <table className="table table-bordered">
-                                <tbody>
-                                    {Object.entries(currentDetails).map(([key, value]) => (
-                                        <tr key={key}>
-                                            <td>{key}</td>
-                                            <td>{value || "N/A"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div> */}
+            </div>
         </div>
 
 

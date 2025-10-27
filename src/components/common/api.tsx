@@ -11,6 +11,22 @@ const apiClient = axios.create({
 });
 
 
+export const getForEpfoStatus = async (endpoint:any) => {
+  try {
+    const response = await apiClient.get(endpoint);
+    return response.data; // Return the API response data
+  } catch (error:any) {
+    if (error.response && error.response.status === 401) {
+      return { message: MESSAGES.error.unauthorized, status: 401 };
+    }
+    if (error.response && error.response.status === 429) {
+      return { message: MESSAGES.error.tooManyRequest, status: 429 };
+    }
+    console.error('GET request failed:', error);
+    throw error;
+  }
+};
+
 
 // Function to make GET requests
 export const get = async (endpoint:any) => {
@@ -36,10 +52,10 @@ export const post = async (endpoint:any, data:any) => {
     return response.data; // Return the API response data
   } catch (error:any) {
     if (error.response && error.response.status === 401) {
-      return { message: MESSAGES.error.unauthorized, status: 401 };
+      return { message:  error?.response?.data?.message || MESSAGES.error.unauthorized , status: 401 };
     }
     if (error.response && error.response.status === 400) {
-      return { message: error?.response?.data?.error, status: 400 };
+      return { message: error?.response?.data?.message || error?.response?.data?.error, status: 400 };
     }
     if (error.response && error.response.status === 429) {
       return { message: MESSAGES.error.tooManyRequest, status: 429 };
@@ -66,9 +82,9 @@ export const put = async (endpoint:any, data:any) => {
 };
 
 // Function to make DELETE requests
-export const del = async (endpoint:any) => {
+export const del = async (endpoint:any, data = {}) => {
   try {
-    const response = await apiClient.delete(endpoint);
+    const response = await apiClient.delete(endpoint, { data });
     return response.data; // Return the API response data
   } catch (error:any) {
     if (error.response && error.response.status === 401) {
@@ -79,13 +95,13 @@ export const del = async (endpoint:any) => {
   }
 };
 
-export const login = async (uan:any, password:any, mobile_number:any) => {  
+export const login = async (uan:any, password:any, mobile_number:any, oldMobileNumber: any = "") => {  
   try {
-    const response = await apiClient.post('auth/login', { uan, password, mobile_number });
+    const response = await apiClient.post('auth/login', { uan, password, mobile_number, oldMobileNumber });
     return response.data;
   } catch (error:any) {
     if (error.response && error.response.status === 400) {
-      return { message: MESSAGES.error.invalidUanPassword, status: 400 };
+      return { message: error?.response?.data?.message?.error || error?.response?.data?.error || MESSAGES.error.invalidUanPassword, status: 400 };
     }
     
     console.error('Login failed:', error);
@@ -140,3 +156,27 @@ export const downloadExcal = async (endpoint:any, data:any, config:any) => {
     throw error
   }
 };
+
+// export const postBlob = async (endpoint: string, data: any) => {
+//   try {
+//     const response = await apiClient.post(endpoint, data, { responseType: "blob" });
+//     return response;
+//   } catch (error: any) {
+//     throw error;
+//   }
+// };
+
+export const postBlob = async (endpoint: string, data: any) => {
+  try {
+    return await apiClient.post(endpoint, data, { 
+      responseType: "blob", // important
+      headers: { "Content-Type": "application/json" },
+      withCredentials: true
+    });
+  } catch (error: any) {
+    throw error;
+  }
+};
+
+
+

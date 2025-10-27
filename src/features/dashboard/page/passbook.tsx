@@ -3,7 +3,7 @@ import { BsChevronRight } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../../../components/common/currency-formatter";
 import { ToTitleCase } from "../../../components/common/title-case";
-import { getShareByPassbook } from "../../../components/common/data-transform";
+import { calculatePassbookClosingBalance } from "../../../components/common/data-transform";
 import { CustomButtonAll } from "../../../helpers/helpers";
 import { useEffect, useState } from "react";
 import ConnectNowModel from "../../../components/dashboard/Models/ConnectNowModel";
@@ -15,21 +15,69 @@ import { AiOutlineExclamationCircle } from "react-icons/ai";
 import AmountStuckModel from "../../../components/dashboard/Models/AmountStuckModel";
 import HighRiskModelEPFOModel from "../../../components/dashboard/Models/HighRiskModelEPFOModel";
 import ConnectEPFOModel from "../../../components/dashboard/Models/ConnectEPFOModel";
-import { setClarityTag } from "../../../helpers/ms-clarity";
 import { ZohoLeadApi } from "../../../components/common/zoho-lead";
 import { BiChevronRight } from "react-icons/bi";
 import VanityCard from "../../../components/dashboard/VanityCard/VanityCard";
 import CurrentBalanceModel from "../../../components/dashboard/Models/CurrentBalanceModel";
+import { get, getForEpfoStatus } from "../../../components/common/api";
+import { trackClarityEvent } from "../../../helpers/ms-clarity";
+import MESSAGES from "../../../components/constant/message";
+import VerifyEpfoPassbookModel from "../../../components/user-registeration/Onboarding2.0/models/VerifyEpfoPassbookModel";
+import VerifyEpfoPassbookOtpModal from "../../../components/user-registeration/Onboarding2.0/models/VerifyEpfoPassbookOtpModal";
+import CallBookedSlider from "../../../components/dashboard/Models/CallBookedModel";
+import { CalendlySlider } from "../../../components/dashboard/Models/CalendlySliderModel";
+import UrgentProfile from "../../../assets/suport-profile.png"
+import InitialCallBookingSlider from "../../../components/dashboard/Models/InitialCallBookingSlider";
+import AfterInitialPaidCallBooking from "../../../components/dashboard/Models/afterInitialPaidCallBooking";
+import AdvancePaidCallBooking from "../../../components/dashboard/Models/advancePaidCallBooking";
+import { formatToISO } from "../../../helpers/dates-convertor";
+import PaymentABTestSlider from "../../../components/dashboard/Models/paymentABTestSlider";
+import { handleCalendlyBooking } from "../../../helpers/calendryBooking";
+import BookingFaildSlider from "../../../components/dashboard/Models/bookingFaildSlider";
+
 
 const PassbookForPF = (props: any) => {
   const [showModal, setShowModal] = useState<any>({
     show: false,
     type: "view report",
   });
+  const [isNewUIToggleEnabled, setIsNewUIToggleEnabled] = useState(false);
 
   const [, setZohoUserID] = useState<any>();
   const showAlternate = props.currentUanData == null;
+  const [calendlyLink, setCalendlyLink] = useState("");
+  const [showCalendlySlider, setShowCalendlySlider] = useState(false);
 
+  const [showBookedSlider, setShowBookedSlider] = useState(false);
+  const [bookedDate, setBookedDate] = useState("");
+  const [bookedTime, setBookedTime] = useState("");
+  const [assigneeName, setAssigneeName] = useState("");
+  const [lastName, setLastName] = useState("");
+  // const [, setPaymentStatus] = useState("");
+  const [showInitialCallSlider, setShowInitialCallSlider] = useState(false);
+  const [showAfterInitialCallbooking, setShowAfterInitialCallbooking] = useState(false);
+  const [showAdvancePaidCallBooking, setShowAdvancePaidCallBooking] = useState(false);
+  const [showPaymentABTestSlider, setShowPaymentABTestSlider] = useState(false);
+  const [showBookingFaildSlider, setShowBookingFaildSlider]= useState(false)
+
+  interface ZohoUpdateLeadParams {
+    tag?: string;
+    status?: string | null;
+    intent?: string | null;
+    intentStatus?: "Scheduled" | "Not Scheduled" | null;
+    callDate?: string | null;
+    callTime?: string | null;
+  }
+  const [isBookingRes, setIsBookingRes] = useState(false);
+  useEffect(() => {
+    if (isBookingRes) {
+      zohoUpdateLead({
+        intentStatus: "Scheduled",
+        callDate: bookedDate,
+        callTime: bookedTime
+      })
+    }
+  }, [isBookingRes]);
 
   useEffect(() => {
     const storedData = localStorage?.getItem("zohoUserId");
@@ -38,7 +86,52 @@ const PassbookForPF = (props: any) => {
       setZohoUserID(zohoUser);
     }
   }, []);
-
+    useEffect(() => {
+      const getToggleValue = async () => {
+        try {
+          const response = await get("/data/toggle/keys");
+          const newUIToggle = response?.allTogglers?.find((item: any) => item.type === "new-ui");
+          setIsNewUIToggleEnabled(newUIToggle?.isEnabled);
+        } catch (err) {}
+      };
+      getToggleValue();
+    }, []);
+    
+    useEffect(() => {
+      // const isKycChanged = props?.currentUanData?.rawData?.isKycChanged;
+      const isScrapingComplete = props?.scrapingStatus === 'complete';
+     setShowModal({ show: false, type: "verifyEpfoPassbook" });
+      // if (props?.type === "refresh" && isKycChanged && isScrapingComplete) {
+      //   setShowModal({ show: true, type: 'kycContinue' });
+      // } else if (props?.type === "full" && isScrapingComplete) {
+      //   setShowModal({ show: true, type: 'kycContinue' });
+      // } else 
+      if (isScrapingComplete) {
+        const timeoutId = setTimeout(() => {
+          props.setScrapingStatus("idle");
+        navigate("/dashboard", {
+          replace: true,
+          state: {
+            mobile_number: props?.currentUanData?.profileData?.data?.phoneNumber?.replace(/^91/, ""),
+            processedUan: props?.currentUanData?.profileData?.data?.uan,
+            type: "null",
+            _ts: Date.now(), 
+          }
+        });
+        navigate(0);
+        }, 5000);
+    
+        // Clean up timeout on re-render
+        return () => clearTimeout(timeoutId);
+      }
+    }, [
+      props?.currentUanData?.rawData?.isKycChanged,
+      props?.type,
+      props?.scrapingStatus,
+      props?.setScrapingStatus,
+      props?.currentUanData
+    ]);
+    
 
 
   const handleHighRiskModelEPFOModel = () => {
@@ -50,22 +143,32 @@ const PassbookForPF = (props: any) => {
   }
 
 
+  const handleCalendlyEvent = async (status?: string, intent?: string) => {    
+    zohoUpdateLead({status:status, intent:intent});
+    
+    await handleCalendlyBooking({
+      zohoIntent: intent,
+      setBookedDate,
+      setBookedTime,
+      setAssigneeName,
+      setShowBookedSlider,
+      setShowPaymentABTestSlider,
+      setShowInitialCallSlider,
+      setShowAfterInitialCallbooking,
+      setShowAdvancePaidCallBooking,
+      setLastName,
+      setCalendlyLink,
+      setShowCalendlySlider,
+      navigate,
+      setShowBookingFaildSlider
+    });
+  };
 
   // resolve now
-  const handleResolveNow = async () => {
-    setShowModal({ show: true, type: "resolvenow" });
-    setClarityTag("BUTTON_RESOLVE_NOW", "Passbook Page full report");
-    zohoUpdateLead("Full Report", "Fix Issues");
-    // const userBalance = decryptData(localStorage.getItem("user_balance"))
-    // const mobileNumber = decryptData(localStorage.getItem("user_mobile"));
-    // if (userBalance > 50000) {
-    //   try {
-    //     await post('lead/knowlarity-lead', { mobileNumber, tag: "Fix Issues" });
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
-  }
+  // const handleResolveNow = async () => {
+  //   setShowModal({ show: true, type: "resolvenow" });
+  //   zohoUpdateLead("Full Report", "Fix Issues");
+  // }
 
   // amountstuck
   const handleAmountStuck = () => {
@@ -74,7 +177,13 @@ const PassbookForPF = (props: any) => {
   }
 
   // zoho lead creation
-  const zohoUpdateLead = async (status: any, intent:any) => {
+  const zohoUpdateLead = async ({
+    status,
+    intent,
+    intentStatus,
+    callDate,
+    callTime
+  }: ZohoUpdateLeadParams) => {
     const rawData = decryptData(localStorage.getItem("lead_data"));
     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
     const userName = decryptData(localStorage.getItem("user_name"));
@@ -101,7 +210,13 @@ const PassbookForPF = (props: any) => {
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: status,
-        CheckMyPF_Intent: intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : (intentStatus === "Scheduled" ? "Scheduled" : "Not Scheduled"),
+      Call_Schedule: intentStatus === "Scheduled" && callDate && callTime
+        ? formatToISO(callDate, callTime)
+        : user.Call_Schedule || "",
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData);
@@ -128,12 +243,20 @@ const PassbookForPF = (props: any) => {
     });
   };
 
+
   const calculatePassbookSum = (selectedMemberId: any) => {
-    const passbookData = getShareByPassbook(
+    // const passbookData = getShareByPassbook(
+    //   props?.currentUanData?.rawData?.data?.passbooks[selectedMemberId]
+    // );
+    const passbookDataforcheck = calculatePassbookClosingBalance(
       props?.currentUanData?.rawData?.data?.passbooks[selectedMemberId]
     );
-    return passbookData.totalAmount;
+  
+    // return passbookData.totalAmount;
+    return passbookDataforcheck.totalAmount;
   };
+
+  
 
   const navigateToScrapper = () => {
     navigate("/login-uan", {
@@ -169,20 +292,47 @@ const PassbookForPF = (props: any) => {
     + props?.currentUanData?.reportData?.amountContributed?.totalEmployerShareInterest
     + props?.currentUanData?.reportData?.amountContributed?.totalPensionShareInterest
 
-  const goToLoginPage = () => {
-    navigate("/login-uan", {
-      state: {
-        type: "refresh",
-        currentUan: props?.currentUanData?.profileData?.data?.uan,
-        mobile_number:
-          props?.currentUanData?.profileData?.data?.phoneNumber.replace(
-            /^91/,
-            ""
-          ),
-          dashboard:true
-      },
-    });
+const goToLoginPage = async () => {
+  if(isNewUIToggleEnabled){
+   setShowModal({ show: true, type: "verifyEpfoPassbook" });
   }
+  else{
+  try {
+    const data = await getForEpfoStatus("/epfo/status");
+    if (data?.isAvailable) {
+      trackClarityEvent(MESSAGES.ClarityEvents.COMPLETE_PROFILE_BUTTON_PRESS);
+      const isScrappedFully = props?.currentUanData?.rawData?.isScrappedFully;
+      if(isScrappedFully){
+        navigate("/login-uan", {
+          state: {
+            type: "refresh",
+            currentUan: props?.currentUanData?.profileData?.data?.uan,
+            mobile_number:
+              props?.currentUanData?.profileData?.data?.phoneNumber.replace(/^91/, ""),
+             password: props?.currentUanData?.profileData?.data?.password,
+            dashboard: true,
+          },
+        });
+      }
+      else{
+      navigate("/login-uan", {
+        state: {
+          type: "refresh",
+          currentUan: props?.currentUanData?.profileData?.data?.uan,
+          mobile_number:
+            props?.currentUanData?.profileData?.data?.phoneNumber.replace(/^91/, ""),
+          dashboard: true,
+        },
+      });
+    }
+    } else {
+      setShowModal({ show: true, type: "serverDown" });
+    }
+  } catch (err) {
+    setShowModal({ show: true, type: "serverDown" });
+  }
+}
+};
   return (
     <div>
 
@@ -252,6 +402,29 @@ const PassbookForPF = (props: any) => {
           passbookSharesData={passbookSharesData}
         />
       )}
+      {/* new ui login models */}
+      {showModal.show && showModal.type === "verifyEpfoPassbook" && (
+            <VerifyEpfoPassbookModel
+              setShowModal={setShowModal}
+              processedUan={props?.currentUanData?.profileData?.data?.uan || props?.otpHandling?.processedUan}
+              epfoLoading={props?.otpHandling?.isEpfoLoading}
+              onVerify={(uan, pass) => props?.otpHandling?.handleVerify(uan, pass, setShowModal)}
+              currentUanData={props?.currentUanData}
+              // selectedTags={selectedTags}
+              // name={name}               
+            />
+          )}
+                     {showModal.show && showModal.type === "verifyEpfoPassbookOtp" && (
+            <VerifyEpfoPassbookOtpModal
+              setShowModal={setShowModal}
+              epfoLoading={props?.otpHandling?.isEpfoLoading}
+              onVerifyOtp={props?.otpHandling?.handleVerifyOtp}
+              onResendOtp={props?.otpHandling?.handleResendOtp}
+              onRetryLogin={props?.otpHandling?.handleVerify} 
+              mobileNumber={props?.otpHandling?.mobileNumber}
+              credentials={props?.otpHandling?.credentials}
+            />
+          )}
 
       <div className="to-margin-top mb-4 pb-3">
         <VanityCard
@@ -271,7 +444,7 @@ const PassbookForPF = (props: any) => {
 
       {showAlternate ? (
         <>
-          <div className="card border-none position-relative" style={{ cursor: "pointer", border: "1px solid #FF3B30" }} onClick={handleAmountStuck}>
+          <div className="card border-none position-relative" style={{ cursor: "pointer", border: "1px solid #FF3B30",  backgroundColor: "#F7F9FF",borderRadius:"1rem" }} onClick={handleAmountStuck}>
             <div className="card-body">
               <AiOutlineExclamationCircle className="text-danger fs-4" style={{ marginTop: '-0.5rem' }} />
               <p className="cardTitle mb-0" style={{ fontWeight: 700 }}>
@@ -296,31 +469,34 @@ const PassbookForPF = (props: any) => {
 
       ) : (<>
 
-        {props?.currentUanData?.rawData?.isScrappedFully ?
-          ((props?.currentUanData?.reportData?.totalIssuesFound?.critical > 0 ||
-            props?.currentUanData?.reportData?.totalIssuesFound?.medium > 0) && (
-              <div className="card border border-danger position-relative" onClick={handleAmountStuck} style={{ cursor: "pointer" }}>
-                <div className="card-body">
-                  <AiOutlineExclamationCircle className="text-danger fs-4" style={{ marginTop: '-0.5rem' }} />
-                  <p className="cardTitle mb-0" style={{ fontWeight: 700 }}>
-                    <span className="text-danger">Amount stuck</span> due to identified issues
-                  </p>
-                  <p className="mb-0 cardHighlightText text-danger mt-2" style={{ fontFamily: 'roboto' }}>
-                    {formatCurrency(
-                      props?.currentUanData?.reportData?.totalAmountStuck
-                    ) || "₹ 0"}
-                  </p>
-                </div>
+        {props?.currentUanData?.rawData?.isScrappedFully 
+          ?
+            ((props?.currentUanData?.reportData?.totalIssuesFound?.critical > 0 ||
+              props?.currentUanData?.reportData?.totalIssuesFound?.medium > 0) && (
+                <div className="card position-relative" onClick={handleAmountStuck} style={{ cursor: "pointer",border:"1px solid #FF0000",borderRadius:"1rem",backgroundColor: "#F7F9FF",}}>
+                  <div className="card-body">
+                    <AiOutlineExclamationCircle className="fs-4" style={{ marginTop: '-0.5rem',color:"#FF0000" }} />
+                    <p className="cardTitle mb-0" style={{ fontWeight: 700 }}>
+                      <span style={{color:"#FF0000"}}>Amount stuck</span> due to identified issues
+                    </p>
+                    <p className="mb-0 cardHighlightText  mt-2" style={{ fontFamily: 'roboto',color:"#FF0000" }}>
+                      {formatCurrency(
+                        props?.currentUanData?.reportData?.totalAmountStuck
+                      ) || "₹ 0"}
+                    </p>
+                  </div>
 
-                <BiChevronRight
-                  size={30}
-                  className="fs-3 position-absolute text-secondary"
-                  style={{ top: "50%", right: "1rem", transform: "translateY(-50%)" }}
-                />
-              </div>
-            ))
+                  <BiChevronRight
+                    size={30}
+                    className="fs-3 position-absolute text-secondary"
+                    style={{ top: "50%", right: "1rem", transform: "translateY(-50%)" }}
+                  />
+                </div>
+              ))
           :
-          <RiskCard riskPossibility={props?.currentUanData?.reportData?.claimRejectionProbability} onClick={handleHighRiskModelEPFOModel}></RiskCard>
+          <>
+            {props?.currentUanData?.rawData && <RiskCard riskPossibility={props?.currentUanData?.reportData?.claimRejectionProbability} onClick={handleHighRiskModelEPFOModel}></RiskCard>}
+          </>
         }
 
       </>
@@ -350,9 +526,10 @@ const PassbookForPF = (props: any) => {
           props?.currentUanData?.reportData?.totalIssuesFound?.medium > 0) && (
             <div className="mt-3">
               <CustomButtonAll
-                content="Resolve Issues Now"
+                content="Resolve Issues Now "
                 color="#FF0000"
-                onClick={handleResolveNow}
+                // onClick={handleResolveNow}
+                onClick={() => handleCalendlyEvent("Full Report", "Fix Issues")}
               />
             </div>
           ))
@@ -384,7 +561,7 @@ const PassbookForPF = (props: any) => {
                   <div
                     key={index}
                     className="card border-0 my-2 shadow-sm"
-                    style={{ cursor: "pointer",borderRadius:"1rem" }}
+                    style={{ cursor: "pointer",borderRadius:"1rem", backgroundColor: "#F7F9FF", }}
                     onClick={() =>
                       passbookClickHandler(
                         item.details["Member Id"],
@@ -422,6 +599,64 @@ const PassbookForPF = (props: any) => {
               })}
           </>
         )}
+
+        {/* Calendly Slider */}
+        {calendlyLink && (
+          <CalendlySlider
+            show={showCalendlySlider}
+            onClose={() => setShowCalendlySlider(false)}
+            calendlyLink={calendlyLink}
+            prefillName={lastName || ""}
+            assigneeName={assigneeName || ""}
+            registeredMobileNumber={decryptData(localStorage.getItem("user_mobile") || "")}
+            onBookingConfirmed={(dbData) => {
+              setBookedDate(dbData.date);
+              setBookedTime(dbData.time);
+              setAssigneeName(dbData.assigneeName);
+              setShowBookedSlider(true);
+              setIsBookingRes(true);
+            }}
+          />
+        )}
+
+        {/* Booked Slider */}
+        <CallBookedSlider
+          show={showBookedSlider}
+          onClose={() => setShowBookedSlider(false)}
+          bookedDate={bookedDate || ""}
+          bookedTime={bookedTime || ""}
+          assignedExpert={assigneeName || "PF Expert"}
+          profileImage={UrgentProfile}
+        />
+
+        <InitialCallBookingSlider
+          show={showInitialCallSlider}
+          onClose={() => setShowInitialCallSlider(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <AfterInitialPaidCallBooking
+          show={showAfterInitialCallbooking}
+          onClose={() => setShowAfterInitialCallbooking(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <AdvancePaidCallBooking
+          show={showAdvancePaidCallBooking}
+          onClose={() => setShowAdvancePaidCallBooking(false)}
+          onBookCall={handleCalendlyEvent}
+        />
+
+        <PaymentABTestSlider
+          show={showPaymentABTestSlider}
+          onClose={() => setShowPaymentABTestSlider(false)}
+        />
+
+        <BookingFaildSlider
+          show={showBookingFaildSlider}
+          onClose={() => setShowBookingFaildSlider(false)}
+          onBookCall={handleCalendlyEvent}
+        />
 
       </div>
     </div>

@@ -2,6 +2,8 @@ import Styles from "./styles/forgot-password.module.css"
 import { Link, ChatSquareDots, Key, PersonCheck, Clipboard, CreditCard } from "react-bootstrap-icons";
 import { CustomButton, CustomOutlinedButton } from '../../helpers/helpers';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { get } from "../common/api";
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
@@ -10,6 +12,20 @@ const ForgotPassword = () => {
     const goToEpfoPortal = () => {
         window.open("https://unifiedportal-mem.epfindia.gov.in/memberinterface", "_blank");
     }
+    const [isNewUIToggleEnabled, setIsNewUIToggleEnabled] = useState(false);
+
+    useEffect(() => {
+      const getToggleValue = async () => {
+        try {
+          const response = await get("/data/toggle/keys");
+          const newUIToggle = response?.allTogglers?.find((item: any) => item.type === "new-ui");
+          setIsNewUIToggleEnabled(newUIToggle?.isEnabled);
+            console.log("isNewUIToggleEnabled",isNewUIToggleEnabled);
+            
+        } catch (err) { }
+      };
+      getToggleValue();
+    }, [])
 
     return (
         <div className="container-fluid ">
@@ -117,7 +133,21 @@ const ForgotPassword = () => {
                         <CustomButton name="Go to EPFO Portal" onClick={goToEpfoPortal} />
                     </div>
                     <div className="d-flex justify-content-center my-3">
-                        <CustomOutlinedButton name="Back to login" onClick={() => navigate('/login-uan', {state: {currentUan}})} />
+                        <CustomOutlinedButton name={isNewUIToggleEnabled ? "Back to Dashboard" : "Back to login"}
+                            onClick={() => {
+                                if (isNewUIToggleEnabled) {
+                                    navigate("/dashboard", {
+                                        state: {
+                                            type: "return-login",
+                                            currentUan,
+                                        },
+                                    });
+                                } else {
+                                    navigate("/login-uan", {
+                                        state: { currentUan },
+                                    });
+                                }
+                            }} />
                     </div>
                 </div>
             </div>

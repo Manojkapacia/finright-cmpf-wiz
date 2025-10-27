@@ -1,7 +1,5 @@
-
 const MESSAGES = {
-    environment : "uat",
-    test_mobile: "9769708326",
+    environment : "prod",
     success: {
         otpSent: "OTP has been sent successfully.",
         otpVerified: "OTP has been verified successfully.",
@@ -33,24 +31,45 @@ const MESSAGES = {
         tooManyRequest: "Access blocked due to multiple attempts, please try again after 10 mins",
         general: "Oops!! something went wrong, Please try again later!!"
     },
+    ClarityEvents : {
+        USER_AUTHENTICATED: "User authenticated",
+        FINRIGHT_OTP_TRIGGERED: "Finright OTP triggered",
+        FINRIGHT_RESEND_OTP: "Finright resend OTP pressed",
+        RETURNING_USER_SIGN_IN: "Returning user sign in",
+        UAN_FOUND: "UAN found",
+        UAN_NOT_FOUND: "UAN not found",
+        SERVICE_HISTORY_FETCHED: "Service history API fetched",
+        PARTIAL_REPORT: "Partial report",
+        COMPLETE_PROFILE_BUTTON_PRESS: "Complete profile button press",
+        REFRESH_BUTTON_PRESS: "refresh button press",
+        DOWNLOAD_BUTTON_PRESS: "Download button press",
+        SCRAPPER_OTP_SENT: "Scrapper OTP sent",
+        SCRAPPER_OTP_VERIFIED: "Scrapper OTP verified",
+        KYC_VERIFIED: "KYC verified",
+        CHOOSE_EMPLOYMENT_STATUS: "choose employement status",
+        FULL_REPORT_GENERATED: "full report generated",
+      },
     labels: {
         otp: "Enter OTP",
         resendOtp: "Resend OTP",
     },
+    CASHFREE_MODE : "sandbox", //sandbox or production
     placeholders: {},
     required: {
         requiredField: (type : any) => `${type} is required.`,
     },
     api: {
-        baseUrl: 'https://uat.finright.in/'
-        // baseUrl: 'https://epf.finright.in/'
-        // baseUrl: 'http://localhost:3001'
+    //    baseUrl: 'https://api.uat.finright.in/v1'
+    //    baseUrl: 'https://api.epf.finright.in/v1'
+        baseUrl: 'http://localhost:3001/v1'
     },
     BASE_URL: 'http://localhost:',
     PF_CHECK_UP_BASE_URL: "https://uat.finright.in",
     PF_CHECK_UP_PROD_URL: "https://uat.finright.in/operation",
-    CHEKC_MY_PF_URL: "https://pf.finright.in/check-pf-withdrawability"
-    // CHEKC_MY_PF_URL: "http://localhost:5174/check-pf-withdrawability"
+    // CHEKC_MY_PF_URL: "https://pf.finright.in/check-pf-withdrawability",
+    CHEKC_MY_PF_URL: "http://localhost:5174/check-pf-withdrawability" , 
+    THEFYNPRINT_URL: "https://uat.thefynprint.com/service"
+
 };
 
 export default MESSAGES;

@@ -20,6 +20,7 @@ import { AiFillEdit } from "react-icons/ai";
 import { AnimatePresence } from "framer-motion";
 import { EmploymentOptionsModal } from "./../../../components/user-registeration/EmployementPopupStatus";
 import { ToTitleCase } from "../../../components/common/title-case";
+import EmploymentStatusSelectorSlider from "../../../components/dashboard/Models/EmploymentStatusSelectorModel";
 
 export const UserRegisterTextContent = () => {
   return (
@@ -533,8 +534,7 @@ export const SkipButton = (props: any) => {
 };
 
 // Your styled component
-export const CurrentWorkingCompany = ({ currentEmploymentUanData, onCompanySelect, setIsModalOpen }: CurrentWorkingCompanyProps) => {
-  
+export const CurrentWorkingCompany = ({ currentEmploymentUanData, onCompanySelect, setIsModalOpen, type }: CurrentWorkingCompanyProps) => {  
   const [showModal, setShowModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [hasUserSelected, setHasUserSelected] = useState(false); 
@@ -555,7 +555,7 @@ export const CurrentWorkingCompany = ({ currentEmploymentUanData, onCompanySelec
   }else if (normalized === "pf not deducted by current employer") {
     return
   } else if (company) {
-    return "I am currently working at :";
+    return "Working at :";
   }
 };
 
@@ -678,6 +678,89 @@ export const CurrentWorkingCompany = ({ currentEmploymentUanData, onCompanySelec
 };
 
   return (
+  //   <div
+  //   className="d-flex align-items-center justify-content-between px-4 py-2 mb-4 mx-auto"
+  //   style={{
+  //     border: "1px solid #D9D9D9",
+  //     borderRadius: "15px",
+  //     backgroundColor: "#F8F8F8",
+  //     // width: "90%",
+  //   }}
+  // >
+  //   <div style={{ textAlign: "left", flex: 1 }}>
+  //     {getDynamicTitle(selectedCompany) && (
+  //       <span style={{ fontSize: "1.13rem" }}>
+  //         {getDynamicTitle(selectedCompany)}<br></br>
+  //       </span>
+  //     )}
+  //     <span style={{ color: "#6D75A7", fontSize: "1rem" }}>
+  //       {selectedCompany}
+  //     </span>
+  //   </div>
+
+  //   <button
+  //     className="d-flex align-items-center justify-content-center"
+  //     onClick={() => setShowModal(!showModal)}
+  //     style={{
+  //       backgroundColor: "#00124F",
+  //       border: "none",
+  //       borderRadius: "50%",
+  //       width: "2rem",
+  //       height: "2rem",
+  //       color: "#ffffff",
+  //       cursor: "pointer",
+  //       // boxShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+  //     }}
+  //   >
+  //     <AiFillEdit size={16} />
+  //   </button>
+  //   {showModal && (
+  //     <EmploymentStatusSelectorSlider onSelect={handleOptionSelect} options={generateOptions()} onClose={() => setShowModal(false)} />
+  //   )}
+  // </div>
+    <>
+    {type !== "full" ? (
+     <div
+      className="d-flex align-items-center justify-content-between px-4 py-2 mb-4 mx-auto"
+      style={{
+        border: "1px solid #D9D9D9",
+        borderRadius: "15px",
+        backgroundColor: "#F8F8F8",
+        // width: "90%",
+      }}
+    >
+      <div style={{ textAlign: "left", flex: 1 }}>
+        {getDynamicTitle(selectedCompany) && (
+          <span style={{ fontSize: "1.13rem" }}>
+            {getDynamicTitle(selectedCompany)}<br></br>
+          </span>
+        )}
+        <span style={{ color: "#6D75A7", fontSize: "1rem" }}>
+          {selectedCompany}
+        </span>
+      </div>
+
+      <button
+        className="d-flex align-items-center justify-content-center"
+        onClick={() => setShowModal(!showModal)}
+        style={{
+          backgroundColor: "#00124F",
+          border: "none",
+          borderRadius: "50%",
+          width: "2rem",
+          height: "2rem",
+          color: "#ffffff",
+          cursor: "pointer",
+          // boxShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
+        }}
+      >
+        <AiFillEdit size={16} />
+      </button>
+      {showModal && (
+        <EmploymentStatusSelectorSlider onSelect={handleOptionSelect} options={generateOptions()} onClose={() => setShowModal(false)} />
+      )}
+    </div>
+    ) : (
     <div
       className="d-flex align-items-center  justify-content-center"
       style={{
@@ -740,6 +823,9 @@ export const CurrentWorkingCompany = ({ currentEmploymentUanData, onCompanySelec
         )}
       </AnimatePresence>
     </div>
+    )}
+    </>
+   
   );
 }
 

@@ -1,0 +1,25 @@
+
+::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scroll-container {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .underline {
+    display: block;
+    width: 3rem;
+    height: 2px;
+    margin-top: 0.1rem;
+    background-color: #304DFF !important;
+    border-radius: 0.2rem !important;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1C1B1F;
+    margin-bottom: 0.5rem;
+  }

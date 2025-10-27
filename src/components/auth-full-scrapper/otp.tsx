@@ -15,14 +15,17 @@ import MESSAGES from "../constant/message";
 import { buildStyles, CircularProgressbar } from "react-circular-progressbar";
 import styles from "./styles/login-uan.module.css"
 import { decryptData, encryptData } from "../common/encryption-decryption";
-import { setClarityTag } from "../../helpers/ms-clarity";
+import { UrgentHelpCard } from "../dashboard/Dashboard2.o/UrgentHelpCard";
+import UrgentProfile from "../../assets/suport-profile.png"
+import { FaExclamationCircle } from "react-icons/fa";
 import { ZohoLeadApi } from "../common/zoho-lead";
+import { trackClarityEvent } from "../../helpers/ms-clarity";
 
 const ScrapperOtp = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { uan, password, mobile_number, messageMobile, type, dashboard} = location.state || {};
+  const { uan, password, mobile_number, type, dashboard } = location.state || {};
 
   const [otp, setOtp] = useState(Array(6).fill(""));
   const [isLoading, setIsLoading] = useState(false);
@@ -36,10 +39,27 @@ const ScrapperOtp = () => {
   const [color, setColor] = useState("#004B9A");
   const [imageSrc, setImageSrc] = useState(otpPrimary);
   const [, setZohoUserID] = useState<any>();
-
+  const [showUrgentHelpCard, setShowUrgentHelpCard] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(45); // 45 seconds
   const otpRefs = useRef<Array<HTMLInputElement | null>>([...Array(6)].map(() => null));
+  const [isScrapperBypassEnabled, setIsScrapperBypassEnabled] = useState(false)
+  const [resendOtpClicked, setResendOtpClicked] = useState(false)
 
-  
+  useEffect(() => {
+    if (timeLeft <= 0) return; // stop when timer hits 0
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval); // cleanup
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 15) {
+      setShowUrgentHelpCard(true);
+    }
+  }, [timeLeft]);
 
   useEffect(() => {
     const storedData = localStorage?.getItem("zohoUserId");
@@ -61,7 +81,6 @@ const ScrapperOtp = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Toast Message Auto Clear
   useEffect(() => {
     if (message.type) {
       isMessageActive.current = true;
@@ -73,9 +92,9 @@ const ScrapperOtp = () => {
     }
   }, [message]);
 
-  const formatTime = () => {
-    const minutes = Math.floor(otpTimer / 60);
-    const remainingSeconds = otpTimer % 60;
+  const formatTime = (sec: any) => {
+    const minutes = Math.floor(sec / 60);
+    const remainingSeconds = sec % 60;
 
     if (minutes > 0 && remainingSeconds > 0) {
       return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds} min`;
@@ -87,7 +106,8 @@ const ScrapperOtp = () => {
   };
 
   const resendOtp = async (event: any) => {
-    setClarityTag("BUTTON_RESEND_OTP", "Login UAN and Password");
+    setResendOtpClicked(true)
+    setShowUrgentHelpCard(true);
     setColor("#004B9A");
     setImageSrc(otpPrimary);
     startProgress();
@@ -98,7 +118,7 @@ const ScrapperOtp = () => {
       try {
         setIsLoading(true);
         setShowLoaderMsg('Resending OTP, Please Wait...');
-        const result = await login(uan, password.trim(), mobile_number);
+        const result = await post("/auth/resend-scrapper-otp", { uan, mobile_number });
 
         if (result.status === 400) {
           setColor("#FF0000");
@@ -118,6 +138,154 @@ const ScrapperOtp = () => {
           setMessage({ type: "success", content: result.message });
           setTimer(45);
         }
+      } catch (error: any) {
+        // Handle network errors
+        if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+          console.warn('Server Connection Error:', {
+            error: error.message,
+            code: error.code
+          });
+          setColor("#FF0000");
+          setImageSrc(otpError);
+          setShowLoaderMsg('Server connection failed. Please check your connection.');
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 3000);
+          setMessage({
+            type: "error",
+            content: "Unable to connect to server. Please check your connection or try again later."
+          });
+          return;
+        }
+
+        setColor("#FF0000");
+        setImageSrc(otpError);
+        setShowLoaderMsg('Something went wrong, please try again');
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 3000);
+
+        // Handle specific status codes
+        switch (error.status) {
+          case 503:
+            const errorCode = error?.errorCode;
+            if (errorCode === "SCRAPPER_DOWN") {
+              setMessage({
+                type: "error",
+                content: "Service is temporarily unavailable. Please try again later.",
+              });
+            } else if (errorCode === "NETWORK_ERROR") {
+              setMessage({
+                type: "error",
+                content: "Unable to connect to the service. Please check your connection.",
+              });
+            } else {
+              navigate("/epfo-down");
+            }
+            break;
+
+          case 500:
+            setMessage({
+              type: "error",
+              content: "An internal server error occurred. Please try again later.",
+            });
+            break;
+
+          case 400:
+            setMessage({
+              type: "error",
+              content: error.message || "Invalid request. Please try again."
+            });
+            break;
+
+          default:
+            setMessage({
+              type: "error",
+              content: error.message || MESSAGES.error.generic
+            });
+        }
+      }
+    }
+  }
+
+  const retryLogin = async (event: any) => {
+    setResendOtpClicked(false)
+    setShowUrgentHelpCard(true);
+    setColor("#004B9A");
+    setImageSrc(otpPrimary);
+    startProgress();
+    setOtp(Array(6).fill(""));
+    event.preventDefault();
+
+    if (uan && password) {
+      try {
+        setIsLoading(true);
+        setShowLoaderMsg('Verifying credentials, Please Wait...');
+        const result = await login(uan, password.trim(), mobile_number);
+
+        if (result.status === 400) {
+          setColor("#FF0000");
+          setImageSrc(otpError);
+          setShowLoaderMsg('Something went wrong, please try again');
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 3000);
+          setMessage({ type: "error", content: result.message });
+        } 
+
+        // 🕒 POLLING STARTS HERE
+        let retries = 0;
+        const maxRetries = 60; // ~3 minutes if interval is 4s
+        const pollInterval = 3000;
+
+        const pollStatus = async () => {
+          try {
+            const loginStatusResponse = await get(`/auth/login-status?uan=${uan}`);
+
+            if (loginStatusResponse?.data?.status === "success") {
+              setColor("green");
+              setImageSrc(otpSuccess);
+              setShowLoaderMsg("OTP sent successfully");
+              setTimeout(() => {
+                setIsLoading(false);
+              }, 3000);
+              setMessage({ type: "success", content: "OTP sent successfully to your registered mobile number" });
+              setTimer(45);
+            } else if (loginStatusResponse?.data?.status === "failed") {
+              setMessage({ type: "error", content: loginStatusResponse?.data?.message || MESSAGES.error.generic });
+              setColor('#FF0000');
+              setImageSrc(otpError);
+              setTimeout(() => {
+                setIsLoading(false);
+              }, 3000);
+              if (loginStatusResponse?.data?.statusCode >= 500) {
+                navigate("/epfo-down")
+              }
+            } else {
+              // Still pending or processing
+              if (++retries < maxRetries) {
+                setTimeout(pollStatus, pollInterval);
+              } else {
+                // setMessage({ type: "error", content: MESSAGES.error.generic });
+                setColor("#FF0000");
+                setImageSrc(otpError);
+                setTimeout(() => setIsLoading(false), 500);
+                navigate("/epfo-down")
+              }
+            }
+          } catch (err:any) {
+            setMessage({ type: "error", content: err?.message });
+            setColor('#FF0000');
+            setImageSrc(otpError);
+            setTimeout(() => {
+              setIsLoading(false);
+            }, 3000);
+            navigate("/epfo-down")
+          }
+        };
+
+        // Start first poll
+        pollStatus();        
       } catch (error: any) {
         // Handle network errors
         if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
@@ -243,8 +411,7 @@ const ScrapperOtp = () => {
     return () => clearInterval(interval);
   };
 
-
-  const zohoUpdateLead = async (status:any) => {
+  const zohoUpdateLead = async (status: any) => {
     const rawData = decryptData(localStorage.getItem("lead_data"));
     const rawExistUser = decryptData(localStorage.getItem("existzohoUserdata"));
     const userName = decryptData(localStorage.getItem("user_name"))
@@ -259,21 +426,21 @@ const ScrapperOtp = () => {
       user.CheckMyPF_Intent.toLowerCase() !== "none"
     ) {
       let intent = user.CheckMyPF_Intent;
-    
+
       if (intent.includes("1lakh")) {
         intent = intent.replace(/1lakh/gi, "").trim();
       }
-    
+
       if (!intent.includes("50K")) {
         intent = intent.length ? `${intent} 50K` : "";
       }
-    
+
       user.CheckMyPF_Intent = intent;
     }
     if (!user) {
       return;
     }
-   
+
     if (user) {
       const zohoReqData = {
         Last_Name: userName || user?.Last_Name,
@@ -284,92 +451,141 @@ const ScrapperOtp = () => {
         Lead_Source: user?.Lead_Source,
         Campaign_Id: user?.Campaign_Id,
         CheckMyPF_Status: status === "Full Report" ? "Full Report" : existUser && existUser !== "" ? user?.CheckMyPF_Status : status,
-        CheckMyPF_Intent: user?.CheckMyPF_Intent,
+        CheckMyPF_Intent:
+        user.CheckMyPF_Intent === "Scheduled"
+          ? "Scheduled"
+          : "Not Scheduled",
+        Call_Schedule: user.Call_Schedule || "", 
         Total_PF_Balance: userBalance > 0 ? userBalance : user?.Total_PF_Balance
       };
       ZohoLeadApi(zohoReqData);
     }
   }
 
+  const getToggleValue = async () => {
+    try {
+      const response = await get("/data/toggle/keys");
+      const scrapperBypassToggle = response?.allTogglers?.find((item: any) => item.type === "scrapper-toggle")
+      setIsScrapperBypassEnabled(scrapperBypassToggle.isEnabled)
+    } catch (err) { }
+  }
+
+  useEffect(() => {
+    getToggleValue()
+  }, [])
+
   const verifyOtp = async (e: any) => {
-    setClarityTag("BUTTON_OTP_VERIFY", "Login UAN and Password");
     e.preventDefault();
     if (otp.every((digit) => digit)) {
+      const payload = {
+        otp: otp.join(''),
+        type,
+        uan,
+        password,
+        mobile_number,
+      };
       try {
         await put('auth/update-profile', { uan, password });
-
-        startProgress();
-        setIsLoading(true);
-        setShowLoaderMsg(<span>Verifying OTP, Please Wait...</span>);
-        // call submit API
-        const result = await post("auth/submit-otp", { otp: otp.join(''), type, uan, password, mobile_number});
-
-        if (result?.status === 400) {
-          setColor('#FF0000');
-          setImageSrc(otpError);
-          setShowLoaderMsg('Invalid OTP.');
-          setOtp(Array(6).fill(""));
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 3000);
-          setMessage({ type: "error", content: result.message });
-          return;
-        }
-
-        // call fetch data by UAN api 
-        const responseUan = await get('/data/fetchByUan/' + uan);
-        
-
-        if (responseUan?.rawData?.data?.error && responseUan.rawData.data.error.trim() !== "") {
-          const errorMsg = "Password Expired!! Please reset on EPFO portal and try again re-login here after 6 hrs post resetting the password";
-          // toast.error(errorMsg);
-          setMessage({ type: "error", content: errorMsg });
-          setColor('#FF0000');
-          setImageSrc(otpError);
-          setTimeout(() => {
-            if(dashboard){
-              navigate("/dashboard", {state: {uan}});
+        if (isScrapperBypassEnabled) {
+          navigate("/dashboard", {
+            state: {
+              processedUan: uan,
+              type, // 'full' or 'kyc'
+              mobile_number,
+              payload,
             }
-            else{
-              // window.location.href = MESSAGES.CHEKC_MY_PF_URL;
-              // localStorage.clear()
-              navigate("/login-uan");
-            }
-          }, 5000);
-          return;
-        }
-
-        // return
-        setColor("green");
-        setImageSrc(otpSuccess);
-        setShowLoaderMsg('Verified Successfully!!');
-        localStorage.setItem("is_logged_in_user", encryptData("true"))
-        localStorage.setItem("user_uan", encryptData(uan))
-        localStorage.setItem("user_mobile", encryptData(mobile_number))
-
-
-        if (!responseUan) {
-          setIsLoading(false);
-          zohoUpdateLead("EPFO down")
-          setMessage({ type: "error", content: MESSAGES.error.generic });
+          });
         } else {
-          setIsLoading(false);
-          const employementDataSet = [{
-            establishment_name: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.establishmentName,
-            currentOrganizationMemberId: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId,
-            userEmpHistoryCorrect: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
-            userStillWorkingInOrganization: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
-            serviceHistory: responseUan?.rawData?.data?.serviceHistory?.history,
-            isFromFullScrapper: true
-          }]
-          zohoUpdateLead("Full Report")
-          if (type.toLowerCase() === 'full') {
-            navigate("/employment-status", { state: { mobile_number, processedUan: uan, currentEmploymentUanData: employementDataSet, type } });
-          } else {
-            navigate("/kyc-details", { state: { processedUan: uan, mobile_number, currentUanData: responseUan, currentEmploymentUanData: employementDataSet, type } });
+          startProgress();
+          setIsLoading(true);
+          setShowLoaderMsg(<span>Verifying OTP, Please Wait...</span>);
+          // call submit API
+          const result = await post("auth/submit-otp", { otp: otp.join(''), type, uan, password, mobile_number });
+          if (result?.status === 400) {
+            setColor('#FF0000');
+            setImageSrc(otpError);
+            setShowLoaderMsg('Invalid OTP.');
+            setOtp(Array(6).fill(""));
+            setTimeout(() => {
+              setIsLoading(false);
+            }, 3000);
+            setMessage({ type: "error", content: result.message });
+            return;
           }
+
+          // call fetch data by UAN api 
+          try {
+            console.log(uan)
+            const responseUan = await get('/data/fetchByUan/' + uan);
+            console.log(responseUan)
+            if (responseUan?.rawData?.data?.error && responseUan.rawData.data.error.trim() !== "") {
+              const errorMsg = "Password Expired!! Please reset on EPFO portal and try again re-login here after 6 hrs post resetting the password";
+              // toast.error(errorMsg);
+              setMessage({ type: "error", content: errorMsg });
+              setColor('#FF0000');
+              setImageSrc(otpError);
+              setTimeout(() => {
+                if (dashboard) {
+                  navigate("/dashboard", { state: { uan } });
+                }
+                else {
+                  // window.location.href = MESSAGES.CHEKC_MY_PF_URL;
+                  // localStorage.clear()
+                  navigate("/login-uan");
+                }
+              }, 5000);
+              return;
+            }
+
+            // return
+            setColor("green");
+            setImageSrc(otpSuccess);
+            setShowLoaderMsg('Verified Successfully!!');
+            trackClarityEvent(MESSAGES.ClarityEvents.SCRAPPER_OTP_VERIFIED);
+            localStorage.setItem("is_logged_in_user", encryptData("true"))
+            localStorage.setItem("user_uan", encryptData(uan))
+            localStorage.setItem("user_mobile", encryptData(mobile_number))
+
+
+            if (!responseUan) {
+              setIsLoading(false);
+              zohoUpdateLead("EPFO down")
+              setMessage({ type: "error", content: MESSAGES.error.generic });
+            } else {
+              setIsLoading(false);
+              if (!responseUan?.rawData?.data?.home || !responseUan?.rawData?.data?.serviceHistory?.history || !responseUan?.rawData?.data?.passbooks || !responseUan?.rawData?.data?.profile || !responseUan?.rawData?.data?.claims) {
+                setColor('#FF0000');
+                setImageSrc(otpError);
+                setShowLoaderMsg('EPFO servers are down or not responding. Redirecting...');
+                setMessage({ type: "error", content: "Seems like there is some issue in getting your data from EPFO. Please try again later!!" });
+                setTimeout(() => {
+                  navigate("/epfo-down");
+                }, 3000);
+                return
+              }
+              const employmentDataSet = [{
+                establishment_name: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.establishmentName,
+                currentOrganizationMemberId: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId,
+                userEmpHistoryCorrect: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+                userStillWorkingInOrganization: responseUan?.rawData?.data?.home?.currentEstablishmentDetails?.memberId ? true : false,
+                serviceHistory: responseUan?.rawData?.data?.serviceHistory?.history,
+                isFromFullScrapper: true
+              }]
+              zohoUpdateLead("Full Report")
+              if (type.toLowerCase() === 'full') {
+                trackClarityEvent(MESSAGES.ClarityEvents.FULL_REPORT_GENERATED);
+                navigate("/employment-status", { state: { mobile_number, processedUan: uan, currentEmploymentUanData: employmentDataSet, type } });
+              } else {
+                navigate("/kyc-details", { state: { processedUan: uan, mobile_number, currentUanData: responseUan, currentEmploymentUanData: employmentDataSet, type: "null" } });
+              }
+            }
+          } catch (error) {
+            console.log(error)
+          }
+
         }
       } catch (error: any) {
+        console.log(error)
         setIsLoading(false)
         if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
           console.warn('Server Connection Error:', {
@@ -453,6 +669,14 @@ const ScrapperOtp = () => {
     }
   };
 
+  // const handleCallBackClick = () => {
+  //   navigate("/epfo-down", {
+  //     state: {
+  //       checkMyPFStatus: "EPFO Down"
+  //     }
+  //   });
+  // };
+
   return (
     <>
       {isLoading && (
@@ -483,17 +707,19 @@ const ScrapperOtp = () => {
               />
             </div>
             <p className="loader-text">
-              {showLoaderMsg} <span style={{ color: '#304DFF' }}>{formatTime()}</span>
+              {showLoaderMsg} <span style={{ color: '#304DFF' }}>{formatTime(otpTimer)}</span>
             </p>
           </div>
         </div>
       )}
       {message.type && <ToastMessage message={message.content} type={message.type} />}
       {!isLoading &&
-        <div className="to-margin-top min-vh-100 d-flex flex-column"
+        // <div className="to-margin-top min-vh-100 d-flex flex-column"
+        <div className={`to-margin-top ${!showUrgentHelpCard ? "min-vh-100" : ""}d-flex flex-column`}
           style={{
-            position: "fixed", // Fixes the container in place
+            position: `${!showUrgentHelpCard ? 'fixed' : 'relative'}`, // Fixes the container in place
             left: 0,
+            // backgroundColor: "#F7F9FF",
             width: "100%", // Ensures full width
           }}
         >
@@ -519,7 +745,7 @@ const ScrapperOtp = () => {
                   width: '385px'
                 }}
               >
-                OTP sent to your mobile number {messageMobile}
+                OTP sent to registered mobile number
               </div>
 
               <div className="d-flex justify-content-center gap-2">
@@ -557,34 +783,86 @@ const ScrapperOtp = () => {
                   width: '280px'
                 }}
               >
-                {timer > 1 ? (
+                {timer > 1 ?
                   <>
-                    Waiting for OTP? Resend in :
+                    Waiting for OTP?
                     <span className="fw-bold ms-1" style={{ color: "#304DFF" }}>
-                      {timer} sec
-                    </span>
+                      {formatTime(timer)}
+                    </span><br/>
+                    {!resendOtpClicked ?
+                      <>                        
+                        <span className="fw-bold ms-1" style={{ color: "#304DFF", cursor: "pointer" }} onClick={resendOtp}>
+                          Resend
+                        </span><br />
+                      </> : " "
+                    }                    
                   </>
-                ) : (
-                  <>
-                    OTP Expired :
-                    <span className="fw-bold ms-1" style={{ color: "#304DFF", cursor: "pointer" }} onClick={resendOtp}>
-                      Resend OTP
-                    </span>
-                  </>
-                )}
+                  :
+                  <span className="fw-bold ms-1" style={{ color: "#304DFF", cursor: "pointer" }} onClick={retryLogin}>
+                    Retry
+                  </span>
+                }
               </div>
-
-              <div className="mb-2"></div>
             </div>
           </div>
+          {showUrgentHelpCard && (
+            <>
+              <center>
+                <div
+                  className="card border-0 shadow-sm p-3"
+                  style={{
+                    backgroundColor: "#FEE6E6",
+                    borderRadius: "1rem",
+                    padding: "0.625rem",
+                    maxWidth: "345px",
+                    display: "flex",
+                    marginTop: "-1.2rem",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: "0.75rem", // gap between icon and text
+                  }}
+                >
+                  <FaExclamationCircle color="#FF0000" className="fs-4" style={{ flexShrink: 0 }} />
 
+                  <div style={{ display: "flex", flexDirection: "column", textAlign: "start" }}>
+                    <span
+                      style={{
+                        color: "#FF0000",
+                        fontSize: "0.875rem", // 14px
+                        fontWeight: 600,
+                        lineHeight: "100%",
+                      }}
+                    >
+                      Not getting OTP?
+                    </span>
+
+                    <span
+                      className="mt-2"
+                      style={{
+                        fontSize: "0.8125rem", // 13px
+                        fontWeight: 400,
+                        lineHeight: "100%",
+                      }}
+                    >
+                      EPFO servers are facing very high fail rates right now. We recommend trying again after 30 mins
+                    </span>
+                  </div>
+                </div>
+              </center>
+              {/* <UrgentHelpCard imageUrl={UrgentProfile} onCallBackClick={handleCallBackClick} bgcolor={false} /> */}
+              <UrgentHelpCard imageUrl={UrgentProfile} bgcolor={false} />
+            </>
+          )}
           <div className="d-flex justify-content-center mb-2">
             <UserRegistrationSubmitButton disabled={otp.includes("") || timer < 1} onClick={verifyOtp} />
           </div>
           <div className="d-flex justify-content-center mb-3">
             <PoweredBy />
           </div>
-          <br /><br /><br />
+          {!showUrgentHelpCard && (
+            <>
+              <br /><br /><br />
+            </>)}
         </div>
       }
     </>

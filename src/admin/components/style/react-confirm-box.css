@@ -1,0 +1,30 @@
+/* Override react-confirm-alert styles */
+.react-confirm-alert-button-group {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .react-confirm-alert-button-group button:first-child {
+    background-color: #dc3545 !important; /* Bootstrap danger */
+    border-color: #dc3545 !important;
+    color: white !important;
+  }
+  
+  .react-confirm-alert-button-group button:last-child {
+    background-color: #6c757d !important; /* Bootstrap secondary */
+    border-color: #6c757d !important;
+    color: white !important;
+  }
+  
+  .react-confirm-alert-overlay {
+    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.3); /* optional for extra dim */
+  }
+  
+  .react-confirm-alert-body {
+    text-align: center;
+    border-radius: 8px;
+    padding: 2rem;
+  }

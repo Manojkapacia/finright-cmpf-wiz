@@ -16,4 +16,5 @@ export interface UserRegistrationOtpInputProps {
     currentEmploymentUanData: any;
     setIsModalOpen: (value: boolean) => void;
     onCompanySelect: (company: string) => void;
+    type: string;
   }

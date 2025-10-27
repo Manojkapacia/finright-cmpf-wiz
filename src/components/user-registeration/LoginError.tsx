@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import MESSAGES from "../constant/message";
 import { useEffect, useState } from "react";
 import { decryptData } from "../common/encryption-decryption";
-import { setClarityTag } from "../../helpers/ms-clarity";
 // import { ZohoLeadApi } from "../common/zoho-lead";
 
 const LoginError = () => {
@@ -65,7 +64,6 @@ const LoginError = () => {
 
 
   const handleTryAgain = () => {
-    setClarityTag("BUTTON_TRY_AGAIN", "Technical error");
     localStorage.clear();
     window.location.href = MESSAGES.CHEKC_MY_PF_URL
   }

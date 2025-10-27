@@ -6,6 +6,8 @@ import { IoMdRefresh } from "react-icons/io";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import MyPdfDocument from "../download-pdf-template";
 import { MdChevronRight, MdOutlineDownloading } from "react-icons/md";
+import { trackClarityEvent } from "../../../helpers/ms-clarity";
+import MESSAGES from "../../constant/message";
 
 
 interface VanityCardProps {
@@ -160,6 +162,7 @@ const VanityCard = ({
                           backgroundColor: "rgba(255, 255, 255, 0.3)",
                           cursor: "pointer",
                         }}
+                        onClick={() => trackClarityEvent(MESSAGES.ClarityEvents.DOWNLOAD_BUTTON_PRESS)}
                       >
                         <MdOutlineDownloading color="#ffffff" className="fs-6" />
                       </div>
@@ -218,7 +221,11 @@ const VanityCard = ({
             {lastUpdated && <p className="vanity-uan-text mt-1">
               Last updated {" "}
               <span style={{ color: colors.vanityInterestColor }}>
-                {lastUpdated}
+              {new Date(lastUpdated).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).replace(/ /g, '-')}
               </span>
             </p>}
           </div>

@@ -1,19 +1,21 @@
 import React, { useState } from "react";
-import { ArrowLeft } from "react-bootstrap-icons";
 interface PFPassbookClaims {
     jsonData?: any
-    onBack: () => void;
+    memberId?: string
+    // onBack: () => void;
 }
 interface PassbookTotals {
     employeeShare: number;
     employerShare: number;
     pensionShare: number;
 }
-const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, onBack }) => {
+const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, memberId }) => {
     const data = jsonData?.data;
 
-    const [selectedCompany, setSelectedCompany] = useState(null);
-    const [selectedYear, setSelectedYear] = useState(null);
+    // const [selectedCompany, setSelectedCompany] = useState(null);
+    const [selectedYear, setSelectedYear] = useState<any>(null);
+    const [selectedCompany, setSelectedCompany] = useState<any>(memberId ?? null);
+
     const handleCompanyChange = (event: any) => {
         // setSelectedCompany(event.target.value);
         const companyId = event.target.value;
@@ -32,6 +34,19 @@ const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, onBack }) => {
     const allPassbookIds =
         data?.passbooks ? Object.keys(data.passbooks) : [];
 
+        React.useEffect(() => {
+            if (selectedCompany && !selectedYear) {
+                const companyData = data?.passbooks?.[selectedCompany];
+                if (companyData && typeof companyData === 'object' && companyData.isTrust !== "true") {
+                    const years = Object.keys(companyData).filter(k => !isNaN(Number(k)));
+                    if (years.length) {
+                        const latestYear = years.sort((a, b) => Number(b) - Number(a))[0];
+                        setSelectedYear(latestYear);
+                    }
+                }
+            }
+        }, [selectedCompany, selectedYear, data]);
+        
 
     // const companyHasPassbook = selectedCompany && data.passbooks[selectedCompany];
     // const passbookData = selectedCompany && selectedYear ? data.passbooks[selectedCompany][selectedYear] : null;
@@ -47,10 +62,11 @@ const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, onBack }) => {
     return (
 
         <>
-            <button className="btn p-0 d-flex align-items-center mt-5 mb-md-3" onClick={onBack}>
+            {/* <button className="btn p-0 d-flex align-items-center mt-5 mb-md-3" onClick={onBack}>
                 <ArrowLeft size={20} className="me-1" /> Back
-            </button>
-            <div>
+            </button> */}
+            <div className="container-fluid" style={{  background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",}}>
+                <div className="row">  
                 <h3>Passbook Details</h3>
                 <div className="d-flex mb-4" style={{ gap: "1rem" }}>
 
@@ -148,7 +164,24 @@ const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, onBack }) => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {passbookData?.transactions?.map((txn: any, index: any) => (
+                                        {[...(passbookData?.transactions || [])]
+                                            .sort((a, b) => {
+                                                const getDateValue = (monthStr: string) => {
+                                                    const [monthNameRaw, yearStr] = monthStr.split('-');
+                                                    const year = Number(yearStr);
+
+                                                    const monthName = monthNameRaw.slice(0, 3); 
+                                                    const monthMap: Record<string, number> = {
+                                                        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+                                                        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+                                                    };
+
+                                                    const monthIndex = monthMap[monthName];
+                                                    return new Date(year, monthIndex).getTime();
+                                                };
+
+                                                return getDateValue(a.wageMonth) - getDateValue(b.wageMonth);
+                                            }).map((txn: any, index: any) => (
                                             <tr key={index}>
                                                 <td>{txn?.wageMonth}</td>
                                                 <td>{txn?.transactionDate}</td>
@@ -230,6 +263,7 @@ const PFPassbook: React.FC<PFPassbookClaims> = ({ jsonData, onBack }) => {
                         </div>
                     </div>
                 )}
+                </div>
             </div>
         </>
     );

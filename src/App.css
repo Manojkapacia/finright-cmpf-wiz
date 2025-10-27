@@ -3,10 +3,22 @@
   /* font-family: 'Roboto', sans-serif !important; */
   font-family: "Poppins", sans-serif !important;
 } 
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  background-color: #EDEBEB !important;
+}
 
-/* 
-* {
-} */
+.responsive-height {
+  height: 92dvh;
+  overflow: hidden;
+}
+
+@media (min-width: 1500px) {
+  .responsive-height {
+    height: 96dvh;
+  }
+}
 .setBackGround{
   background-color: #07073c;
   min-height: 100vh;
@@ -295,4 +307,43 @@ td {
   .to-margin-top {
     margin-top: 0.9rem;
   }
+}
+
+.stabber-row {
+  display: flex;
+  gap: 8px; /* small space between stabbers */
+  margin-bottom: 1rem;
+  justify-content: flex-start; /* left align */
+}
+
+.stabber-bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 80px;
+}
+
+.stabber {
+  width: 100%;
+  height: 5px;
+  border-radius: 10rem;
+  margin-bottom: 4px;
+}
+
+.orange {
+  background-color: #F56905;
+}
+
+.green {
+  background-color: #34A853;
+}
+
+.grey {
+  background-color: #d3d3d3;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333;
 }
