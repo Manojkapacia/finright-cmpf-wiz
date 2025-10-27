@@ -1,0 +1,23 @@
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  .circular-loader {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(#007bff 0deg, #e6e6e6 0deg); /* Dynamic background for progress */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  

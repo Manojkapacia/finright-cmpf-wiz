@@ -1,0 +1,234 @@
+.pfAmount{
+    font-size: 1.37rem;
+    font-weight: 400;
+}
+.KycHeading{
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .kycHeadText{
+    font-size: 0.70rem;
+    font-weight: 600;
+  }
+  .kycSubText{
+    font-size: 0.87rem;
+    font-weight: 300;
+  }
+  .kycDetailsCheck{
+    font-size: 0.87rem;
+    font-weight: 700;
+  }
+  .nextStep{
+    font-size: 0.87rem;
+    font-weight: 400;
+  }
+  .nextStepMutedText{
+    font-size: 0.5rem;
+    font-weight: 400;
+  }
+  .fontsize11{
+   font-size: 0.6875rem;
+   font-weight: 400;
+
+  }
+  .fontsize14{
+    font-size: 0.875rem;
+    font-weight: 400;
+ 
+   }
+   .viewButton{
+    border: 1px solid #00124F !important;
+    border-radius: 2rem !important;
+    font-weight: 400 !important;
+    font-size: 0.72rem !important;
+   }
+   .fontsize16{
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+   }
+   .resolveBtn{
+    font-size: 0.5rem;
+    font-weight: 700 ;
+    color: #00124F ;
+    border: 1px solid #00124F;
+    cursor: pointer;
+    border-radius: 2rem;
+    background-color: #ffffff;
+   }
+  /* payment update pf report */
+  .pensionContainer {
+    width: 360px;
+    margin: auto;
+    margin-top: 20px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .pensionHeader {
+    color: #000000;
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    width: 320px;
+    margin: auto;
+    margin: 10px 0;
+    text-align: left;
+  }
+  
+  .pensionRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    width: 320px;
+    height: 33px;
+    margin: auto;
+    padding-right: 15px;
+  }
+  
+  
+  /* Main Unlock Container */
+  .unlockContainer {
+    max-width: 360px;
+    margin: 0 auto; /* Center horizontally */
+    margin-top: -10px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 250vh;
+  }
+  
+  
+  /* Blurred Content (Scrollable) */
+  .blurredContent {
+    filter: blur(7px);
+    pointer-events: none;
+    user-select: none;
+    text-align: center;
+    background: transparent;
+    background-color: #FFFFFF;
+    padding: 15px;
+    border-radius: 5px;
+    width: 100%;
+    /* overflow-y: auto; */
+    max-height: 300vh;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Remove Blur After Payment */
+  .unlockedContent {
+    filter: none;
+    pointer-events: auto;
+  }
+  
+  /* Fixed Section (Initially Hidden) */
+  .fixedSection {
+    position: fixed;
+    bottom: -100px; /* Start Hidden */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 385px;
+    /* background: rgba(238, 249, 255, 0.8); */
+    padding: 20px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: bottom 0.4s ease-in-out;
+    opacity: 0; /* Initially Hidden */
+    visibility: hidden;
+  }
+  
+  /* Make Fixed Section Visible */
+  .fixedSection.visible {
+    bottom: 0;
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Unlock Button */
+  .unlockBtn {
+    width: 325px;
+    height: 41px;
+    border-radius: 100px;
+    background: #304DFF;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+    position: relative;
+    padding-left: 60px;
+  }
+  
+  /* White Circular Lock Icon */
+  .lockCircle {
+    width: 39px;
+    height: 39px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 1px;
+  }
+  
+  /* Lock Icon */
+  .lockIcon {
+    color: #FA3E3E;
+    font-size: 16px;
+  }
+  
+  /* Tick Marked Content */
+  .contentList {
+    text-align: left;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Individual Content Items */
+  .contentItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #000000;
+  }
+  
+  /* Check Badge Icon */
+  .checkIcon {
+    font-size: 20px;
+    color: #304DFF;
+  }
+
+  .withdrawalText{
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+  
+  

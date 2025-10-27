@@ -1,0 +1,195 @@
+:root {
+     /* User Register Text */
+    --fs-user-register-title: 2rem;     /* 32px */
+    --fw-user-register-title: 600;
+
+    --fs-user-register-subtitle: 1.125rem; /* 18px */
+    --fw-user-register-subtitle: 600;
+
+    /* Select Employement Status */
+    --fs-employe-title: 1.125rem;      /* 18px */
+    --fw-employe-title: 400;
+
+    /* Vanity Card */
+    --fs-vanity-title: 1.125rem;      /* 18px */
+    --fw-vanity-title: 600;
+  
+    --fs-vanity-text: 0.75rem;        /* 12px */
+    --fw-vanity-text: 500;
+  
+    /* Section title */
+    --fs-section-title: 1rem;         /* 16px */
+    --fw-section-title: 500;
+  
+    /* Card */
+    --fs-title-card-title: 0.8125rem;  /* 13px */
+    --fw-title-card-title: 500;
+  
+    --fs-title-highlight: 1.25rem;     /* 20px */
+    --fw-title-highlight: 700;
+  
+    --fs-title-card-body: 0.8125rem;  /* 13px */
+    --fw-title-card-body: 400;
+  
+    --fs-subtext: 0.625rem;           /* 10px */
+    --fw-subtext: 400;
+  
+    /* Generic text */
+    --fs-text-semibold: 0.8125rem;    /* 13px */
+    --fw-text-semibold: 600;
+
+
+   /* vanity 2.0 */
+   --font-size-uan: 0.8125rem; /* 13px */
+   --font-size-name: 1.25rem; /* 20px */
+   --font-size-label: 0.8125rem; /* 13px */
+   --font-size-amount: 1.75rem; /* 28px */
+   --font-size-button: 0.80rem; /*13px */
+ 
+   --font-weight-400: 400;
+   --font-weight-500: 500;
+   --font-weight-600: 600;
+
+   /* models */
+   --slider-font-size-label: 0.875rem;   /* 14px */
+   --slider-font-size-title: 1.125rem;   /* 18px */
+   --slider-font-size-value: 1.125rem;   /* 18px */
+ 
+   --slider-font-weight-400: 400;
+   --slider-font-weight-500: 500;
+
+   /* express withdraw  */
+   --font-size-expresspage-title:1.125rem;
+   --font-size-expresspage-subtext:0.875rem;
+   --font-size-expresspage-cardTitle:1rem;
+   --font-size-expresspage-cardsubTitle: 0.8125rem;
+   --font-size-expresspage-amount: 2.25rem;
+   --font-size-expresspage-accountIFSC: 0.875rem;
+  }
+  
+
+  
+  /* Vanity Card */
+  .vanity-title {
+    font-size: var(--fs-vanity-title) !important;
+    font-weight: var(--fw-vanity-title) !important;
+  }
+  
+  .vanity-text {
+    font-size: var(--fs-vanity-text) !important;
+    font-weight: var(--fw-vanity-text) !important;
+  }
+
+  /* Section Title */
+  .select-employe-status {
+    font-size: var(--fs-employe-title) !important;
+    font-weight: var(--fw-employe-titlee) !important;
+  }
+  
+  /* Section Title */
+  .section-title {
+    font-size: var(--fs-section-title) !important;
+    font-weight: var(--fw-section-title) !important;
+  }
+  
+  /* Card */
+  .card-title {
+    font-size: var(--fs-title-card-title) !important;
+    font-weight: var(--fw-title-card-title) !important;
+  }
+  
+  .card-highlight {
+    font-size: var(--fs-title-highlight) !important;
+    font-weight: var(--fw-title-highlight) !important;
+  }
+  
+  .card-body {
+    font-size: var(--fs-title-card-body) !important;
+    font-weight: var(--fw-title-card-body) !important;
+  }
+  
+  .card-subtext {
+    font-size: var(--fs-subtext) !important;
+    font-weight: var(--fw-subtext) !important;
+  }
+  
+  /* Generic Text */
+  .text-semibold {
+    font-size: var(--fs-text-semibold) !important;
+    font-weight: var(--fw-text-semibold) !important;
+  }
+  
+
+
+
+
+  /*vanity 2.0  */
+.vanity-uan-text {
+  font-size: var(--font-size-uan)!important;
+  font-weight: var(--font-weight-500)!important;
+  font-family: 'Roboto', sans-serif;
+}
+
+.vanity-name-text {
+  font-size: var(--font-size-name)!important;
+  font-weight: var(--font-weight-500)!important;
+}
+
+.vanity-label-text {
+  font-size: var(--font-size-label)!important;
+  font-weight: var(--font-weight-500)!important;
+}
+
+.vanity-amount-text {
+  font-size: var(--font-size-amount)!important;
+  font-weight: var(--font-weight-600)!important;
+  font-family: 'Roboto', sans-serif;
+}
+.vanity-button{
+  font-size: var(--font-size-button)!important;
+  font-weight: var( --font-weight-400)!important;
+}
+
+
+/* models */
+.slider-label-text {
+  font-size: var(--slider-font-size-label)!important;
+  font-weight: var(--slider-font-weight-500)!important;
+}
+
+.slider-title-text {
+  font-size: var(--slider-font-size-title)!important;
+  font-weight: var(--slider-font-weight-500)!important;
+}
+
+.slider-value-text {
+  font-size: var(--slider-font-size-value)!important;
+  font-weight: var(--slider-font-weight-500)!important;
+  font-family: 'Roboto', sans-serif !important;
+
+}
+
+.express-withdraw-title{
+  font-size: var(--font-size-expresspage-title)!important;
+  font-weight: var(--font-weight-500);
+}
+.express-withdraw-subtitle{
+  font-size: var(--font-size-expresspage-subtext)!important;
+  font-weight: var(--font-weight-400);
+}
+.express-card-title{
+  font-size: var(--font-size-expresspage-cardTitle)!important;
+  font-weight: var(--font-weight-500);
+}
+.express-card-subtitle {
+  font-size: var(--font-size-expresspage-cardsubTitle)!important;
+  font-weight: var(--font-weight-400);
+}
+.express-amount{
+  font-size: var(--font-size-expresspage-amount)!important;
+  font-weight: var(--font-weight-400);
+}
+.express-account-IFSC{
+  font-size: var(--font-size-expresspage-accountIFSC)!important;
+  font-weight: var(--font-weight-400);
+}

@@ -1,0 +1,343 @@
+.search-icon {
+    width: 100px;
+    height: 100px;
+    border-width: 3px;
+  }
+  
+  .searching-uan-text {
+    /* font-family: 'Inter', sans-serif; */
+    font-size: 24px;
+    line-height: 100%;
+    letter-spacing: 0%;
+  }
+  
+  .loading-box {
+    width: 275px;
+    height: 100px;
+  }
+  
+  .loading-bar {
+    height: 27px;
+    width: 207px;
+    background-color: #e0e0e0;
+  }
+  
+  /* login Error */
+  /* Main Container */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Content Section */
+.content-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 0;
+}
+
+/* Error Container */
+.error-container {
+  margin-top: 10px;
+  width: 350px;
+  border-radius: 10px;
+  border: 1px solid #FA3E3E;
+  background-color: #FF3B3030;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Error Header */
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.labelSubHeading{
+  color: #2F6870;
+  font-size: 0.81rem;
+  font-weight: 500;
+}
+/* Error Icon */
+.error-icon {
+  color: #FA3E3E;
+  font-size: 18px;
+  background: none;
+}
+
+/* Error Title */
+.error-title {
+
+    /* font-family: "Inter"; */
+  /* font-family: "Inter", sans-serif; */
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  color: #000;
+  text-align: left;
+  width: 282px;
+  margin: 0;
+}
+
+/* Error Message Text */
+.error-text {
+  margin-left: 27px;
+}
+
+.error-message {
+  /* font-family: "Inter", sans-serif; */
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-top: 10px;
+  color: #000;
+  width: 278px;
+  margin: 0;
+  text-align: left;
+}
+
+/* Buttons Container */
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Primary Button */
+.primary-button {
+  background-color: #00124F;
+  color: white;
+  width: 350px;
+  height: 51px;
+  border-radius: 1000px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+}
+
+.primary-button:hover {
+  background-color: #002980;
+}
+
+/* Secondary Button */
+.secondary-button {
+  background-color: transparent;
+  border: 1px solid #00124F;
+  color: #00124F;
+  width: 350px;
+  height: 51px;
+  border-radius: 1000px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+}
+
+.secondary-button:hover {
+  background-color: #e6e6e6;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  margin-bottom: 24px;
+}
+
+/* Searching component */
+/* Title & Subtitle */
+.user-register-text {
+  width: 345px;
+  /* text-align: center; */
+}
+
+.title {
+    text-align: left;
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  width: 325px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  text-align: left;
+
+  font-weight: 600;
+  font-size: 18px;
+
+  width: 325px;
+  margin-bottom: 20px;
+}
+
+/* Login Container */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 345px;
+  margin-top: 30px;
+}
+
+/* Heading */
+.login-heading {
+  color: #000000;
+  font-weight: 600;
+  font-size: 24px;
+  text-align: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Input Group */
+.input-group {
+  width: 345px;
+  margin-top: 15px;
+}
+
+/* Label */
+.input-label {
+  display: block;
+  color: #000000;
+  font-weight: 400;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+/* Input Box */
+.input-box {
+  width: 100%;
+  height: 51px;
+  background-color: #ffffff;
+  padding: 16px 10px;
+  border-radius: 10px!important;
+  border: none; /* Removing border */
+  outline: none; /* Removes focus border */
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+/* Input Placeholder */
+.input-box::placeholder {
+  color: #888888;
+}
+
+/* epfo down */
+.withdrawal-message {
+
+  color: #000000;
+  font-weight: 400;
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  text-align: center;
+  vertical-align: middle;
+  width: 345px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* buttonclick */
+.clickeffect:active {
+  transform: scale(0.95);
+}
+
+/* loading effect */
+.loading-bar {
+  width: 80%;
+  height: 1rem;
+  background: #e0e0e0;
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmerAnimation 1.5s infinite linear;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1050;
+  width: 100vw;
+  height: 100vh;
+  backdrop-filter: blur(1px);
+  background-color:  rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content-box {
+  width: 100%;
+  min-width: 17.1875rem;
+  max-width: 19.5625rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.option-item {
+  padding: 0.75rem 1rem;
+  /* font-size: 0.95rem; */
+  cursor: pointer;
+}
+
+/* .option-item:hover {
+  background-color: #f1f1f1;
+} */
+
+@keyframes shimmerAnimation {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.spacing-fix{
+  margin-top: 1rem;
+}
+
+@media (min-width: 550px) {
+  .to-margin-top {
+    margin-top: 1rem;
+  }
+  .to-margin-top-extra{
+    margin-top: 2.2rem;
+  }
+}
+/* 
+@media  (min-width: 384px)  {
+
+    .spacing-fix{
+      margin-top: 5rem;
+  }
+  
+}
+
+@media  (min-width: 400px) and (max-width: 1040px) {
+  .spacing-fix{
+    margin-top: 1rem;
+}
+} */

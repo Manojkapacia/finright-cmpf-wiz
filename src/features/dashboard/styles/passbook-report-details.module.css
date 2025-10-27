@@ -1,0 +1,46 @@
+.pfCard{
+    background: linear-gradient(to bottom, 
+    #122A7B 0%,
+    #00124F 33%,
+    #041448 66%,
+    #111627 100%
+  );
+    padding: 1rem;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .currentText{
+    font-size: 0.70rem;
+    font-weight: 500;
+  }
+  .currentAmount{
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .WithdrawBtn {
+    border-radius: 2rem !important;
+    background-color: #ffffff !important;
+    color: #00124F !important;
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+  }
+
+  .currentPeriod {
+    font-size: 0.6rem;
+    font-weight: 400;
+    opacity: 0.85;
+  }
+  .TotalAmount{
+    font-size: 1.33rem;
+    font-weight: 400;
+  }
+
+  .VanityHeadText{
+    font-size:  0.8125rem;
+    font-weight: 500;
+  }
+  .pfAmount{
+    font-size: 1.25rem;
+    font-weight: 600;
+  }

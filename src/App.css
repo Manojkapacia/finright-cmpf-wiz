@@ -1,42 +1,298 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+:root {
+  /* font-family: 'Vazir', sans-serif !important; */
+  /* font-family: 'Roboto', sans-serif !important; */
+  font-family: "Poppins", sans-serif !important;
+} 
+
+/* 
+* {
+} */
+.setBackGround{
+  background-color: #07073c;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column; 
+}
+.appContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.contentWrapper {
+  flex-grow: 1;
+  /* display: flex;
+  justify-content: center;
+  align-items: center; */
+  /* padding: 2rem; */
+}
+.fontsize16{
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+ }
+ .withdrawBth{
+  font-size: 0.5rem;
+  font-weight: 700 ;
+  color: #00124F ;
+  cursor: pointer;
+  border-radius: 2rem;
+  background-color: #ffffff;
+ }
+
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: white;
+  z-index: 1000;
+  /* height: 60px; */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+} 
+.headerContent {
+  margin-top: 4rem !important;
+}
+
+
+
+/* ✅ Completely hide number input arrows in all browsers */
+input[type="number"] {
+  -moz-appearance: textfield !important; /* Firefox */
+  -webkit-appearance: none !important; /* Safari, Chrome */
+  appearance: none !important; /* Standard */
+}
+
+/* ✅ Extra fix for Chrome, Safari */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+/* chart */
+.chart-wrapper {
+  width: 330px;
+  background-color: #FFFFFF; /* White Background */
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin: auto;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.fund-growth-heading {
+  color: #000000;
+  font-family: Roboto;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 100%;
+  padding-left: 10px;
+  letter-spacing: 0px;
+  width: 330px;
+  height: 19px;
+  margin: 10px;
+}
+
+.chart-container {
+  width: 320px;
+  height: 303px;
+  background-color: #27debf30;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.table-container {
+  width: 320px;
+  margin-top: 20px;
+}
+
+/* table {
+  width: 100%;
+  border-collapse: collapse;
+}  */
+
+th {
+  font-family: Roboto;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 100%;
+  letter-spacing: 0px;
+  color: #000000;
+  text-align: left;
+  padding: 8px;
+}
+
+td {
+  font-family: Roboto;
+  font-weight: 300;
+  font-size: 12px;
+  line-height: 15px;
+  letter-spacing: 0px;
+  /* text-align: left;
+  padding: 8px;
+  display: flex;
+  align-items: center; */
+} 
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+
+/* fund distribution */
+.fund-distribution-wrapper {
+  width: 330px;
+  background-color: #FFFFFF; /* White Background */
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin: auto;
+  margin-top: 10px;
+}
+
+.doughnut-chart {
+  width:192px;
+  height:192px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fundDistribution {
+  font-family: Roboto;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 100%;
+  letter-spacing: 0px;
+  color: #000000;
   text-align: center;
+  margin-bottom: 10px;
+}
+
+.table {
+  width: 330px;
+  margin-top:20px;
+}
+
+.fundTabelHeading {
+  font-family: Roboto;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 100%;
+  letter-spacing: 0px;
+  color: #000000;
+}
+
+.fundTabelText {
+  font-family: Roboto;
+  font-weight: 300;
+  font-size: 12px;
+  line-height: 15px;
+  letter-spacing: 0px;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  width: 6.7rem; 
+  height: 2rem;
+  /* margin-left:5rem; */
+  cursor: pointer;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.logoImage {
+  width: 6.7rem; 
+  height: 2rem;
+  /* margin-left:5rem; */
+  cursor: pointer;
+}
+/* Set whole Applicaion font Size */
+
+.vanityCardTitle{
+  font-size: 1.13rem !important;
+  font-weight: 600 !important;
+}
+.vanityCardText{
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+}
+.sectionTitle{
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+.cardTitle{
+  font-size: 0.81rem !important;
+  font-weight: 500;
+}
+.cardHighlightText{
+  font-size: 1.25rem !important;
+  font-weight: 400 !important;
+}
+.cardBody{
+  font-size: 0.81rem !important;
+  font-weight: 400 !important;
+}
+.cardSubText{
+  font-size: 0.63rem !important;
+  font-weight: 400 !important;
+}
+.paragraphText{
+  font-size: 0.81rem !important;
+  font-weight: 400 !important;
+}
+.modalHeadText{
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+}
+.modalSubText{
+  font-size: 0.81rem !important;
+  font-weight: 400 !important;
+}
+.underline {
+  display: block;
+  width: 3rem;
+  height: 2px;
+  margin-top: 0.1rem;
+  background-color: #304DFF !important;
+  border-radius: 0.2rem !important;
+}
+.underlinered {
+  display: block;
+  width: 3rem;
+  height: 2px;
+  margin-top: 0.1rem;
+  background-color:"#FF0000"!important;
+  border-radius: 0.2rem !important;
+}
+
+@media only screen and (max-width: 770px) {
+  .logo {
+    width: 6rem;
+    height: 1.75rem;
+    margin-left: 0;
   }
-  to {
-    transform: rotate(360deg);
+  .logoImage {
+    width: 2rem;
+    height: 1.75rem;
+    margin-left: -10px;
+  }
+}
+@media (max-width: 558px) {
+  .headerContent {
+    margin-top: 7rem !important; /* Smaller margin on mobile */
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+
+@media (min-width: 768px) {
+  .to-margin-top {
+    margin-top: 0.9rem;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

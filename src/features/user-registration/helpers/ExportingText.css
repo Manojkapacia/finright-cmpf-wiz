@@ -1,0 +1,134 @@
+/* .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .text-content {
+    text-align: left;
+  }
+  
+  .text-heading {
+    font-weight: 600;
+    font-size: 32px;
+  }
+  
+  .text-subheading {
+    font-weight: 400;
+    font-size: 18px;
+  }
+  
+  .epf-member-container img {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .epf-member-text {
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .choose-uan-container {
+    width: 275px;
+    border-radius: 5px;
+  }
+  
+  .uan-number {
+    font-weight: 400;
+    font-size: 22px;
+  }
+  
+  .service-period,
+  .service-years {
+    font-size: 18px;
+    color: #858585;
+  }
+  
+  .no-uan-container {
+    text-align: center;
+  }
+  
+  .no-uan-box {
+    width: 275px;
+    border-radius: 5px;
+  }
+  
+  .no-uan-text {
+    font-size: 18px;
+    color: #000;
+  }
+  
+  .no-uan-footer {
+    font-size: 12px;
+    color: #FF3B30;
+  }
+  
+  .data-encryption {
+    font-size: 12px;
+    color: #858585;
+  }
+  
+  .powered-by-logo {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .submit-button {
+    width: 350px;
+    border-radius: 1000px;
+    background-color: #00124F;
+    color: #fff;
+  }
+  
+  .submit-footer {
+    font-size: 12px;
+    color: #858585;
+  }
+  
+  .otp-input {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .skip-button {
+    width: 350px;
+    border-radius: 1000px;
+    border: 1px solid #00124F;
+  }
+  
+  .current-title {
+    color: #858585;
+  }
+  
+  .current-name {
+    font-size: 22px;
+  }
+  
+  .not-listed-container {
+    width: 275px;
+    border-radius: 5px;
+  }
+  
+  .not-listed-text {
+    font-size: 22px;
+    text-align: center;
+  }
+   */
+   /* UserRegisterTextContent */
+   
+  .title {
+    font-size: var(--fs-user-register-title);
+  font-weight: var(--fw-user-register-title);
+    line-height: 100%;
+    letter-spacing: 0%;
+    max-width: 20.3125rem;  
+  }
+  
+  .subtitle {
+    font-size: var(--fs-user-register-subtitle);
+  font-weight: var(--fw-user-register-subtitle);
+    max-width: 20.3125rem;
+  }
+  
+
+  .clickeffect:active {
+    transform: scale(0.95);
+  }

@@ -1,0 +1,83 @@
+.custom-button {
+  max-width: 19.5rem; 
+  min-width: 18rem;  height: 3.1875rem; /* 51px */
+  max-height: 4.5rem; /* 72px */
+  border-radius: 62.5rem; /* 1000px */
+  background-color: #00124f;
+  color: white;
+  padding: 1rem 2rem; /* 16px 32px */
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+ .custom-button:active {
+  transform: scale(0.95);
+}
+
+.custom-button-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 19.5rem; 
+  min-width: 18rem;
+  height: 3.1875rem; 
+  font-weight: 500;
+  max-height: 4.5rem; /* 72px */
+  border-radius: 62.5rem; /* 1000px */
+  background-color: #00124f;
+  color: white;
+  padding: 1rem 2rem; /* 16px 32px */
+  border: none;
+  outline: none;
+  cursor: pointer;
+  text-align: center;
+}
+
+.custom-button-arrow:active {
+  transform: scale(0.95);
+}
+
+/* outline */
+.custom-outlined-button {
+  border: 1px solid #00124F;
+  max-width: 19.5rem; 
+  min-width: 18rem;
+    height: 3rem; /* 51px */
+  max-height: 4.5rem; /* 72px */
+  border-radius: 62.5rem; /* 1000px */
+  background-color: transparent;
+  color: #00124F;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.125rem; /* 2px */
+  padding: 1rem 2rem; /* 16px 32px */
+  cursor: pointer;
+}
+.custom-button-with-icon {
+  /* border: 1px solid #00124F; */
+  max-width: 19.5rem; 
+  min-width: 18rem;
+    height: 3rem; /* 51px */
+  max-height: 4.5rem; /* 72px */
+  border-radius: 62.5rem; /* 1000px */
+  background-color: transparent;
+  background-color: #00124f;
+  color: white;  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.125rem; /* 2px */
+  padding: 1rem 2rem; /* 16px 32px */
+  cursor: pointer;
+}
+
+.custom-outlined-button:active {
+  transform: scale(0.95);
+}
+
+.custom-button-with-icon:active {
+  transform: scale(0.95);
+}

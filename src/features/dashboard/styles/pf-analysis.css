@@ -1,0 +1,343 @@
+
+
+
+
+/* chart */
+.chart-wrapper {
+    width: 360px;
+    border-radius: 5px;
+    padding: 15px;
+    margin: auto;
+    margin-top: 20px;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .fund-growth-heading {
+    color: #000000;
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 100%;
+    padding-left: 10px;
+    letter-spacing: 0px;
+    width: 360px;
+    height: 19px;
+    margin: 10px;
+  }
+  
+  .chart-container {
+    width: 320px;
+    height: 303px;
+    background-color: #27debf30;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .table-container {
+    width: 320px;
+    margin-top: 20px;
+  }
+  
+  /* table {
+    width: 100%;
+    border-collapse: collapse;
+  }  */
+  
+  th {
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    color: #000000;
+    text-align: left;
+    padding: 8px;
+  }
+  
+  td {
+    font-family: Roboto;
+    font-weight: 300;
+    font-size: 12px;
+    line-height: 15px;
+    letter-spacing: 0px;
+    text-align: left;
+    /* 
+    padding: 8px;
+    display: flex;
+    align-items: center; */
+  } 
+  
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  
+  
+  /* fund distribution */
+  .fund-distribution-wrapper {
+    width: 360px;
+    background-color: #FFFFFF; /* White Background */
+    border-radius: 5px;
+    padding: 15px;
+    margin: auto;
+    margin-top: 10px;
+  }
+  
+  .doughnut-chart {
+    width:192px;
+    height:192px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .fundDistribution {
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    color: #000000;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .table {
+    width: 360px;
+    margin-top:20px;
+  }
+  
+  .fundTabelHeading {
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 100%;
+    text-align: left;
+    letter-spacing: 0px;
+    color: #000000;
+  }
+  
+  .fundTabelText {
+    font-family: Roboto;
+    font-weight: 300;
+    text-align: left;
+    font-size: 12px;
+    line-height: 15px;
+    letter-spacing: 0px;
+  }
+  
+  
+  /* payment unlock */
+  .pension-container {
+    width: 360px;
+    margin: auto;
+    margin-top: 20px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .pension-header {
+    color: #000000;
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    width: 320px;
+    margin: auto;
+    margin: 10px 0;
+    text-align: left;
+  }
+  
+  .pension-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    width: 320px;
+    height: 33px;
+    margin: auto;
+    padding-right: 15px;
+  }
+  
+  
+  
+  /* Main Unlock Container */
+  .pensionContainer {
+    width: 360px;
+    margin: auto;
+    margin-top: 20px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  
+  .pensionHeader {
+    color: #000000;
+    font-family: Roboto;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    width: 320px;
+    margin: auto;
+    margin: 10px 0;
+    text-align: left;
+  }
+  
+  .pensionRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    width: 320px;
+    height: 33px;
+    margin: auto;
+    padding-right: 15px;
+  }
+  
+  
+  /* Main Unlock Container */
+  .unlockContainer {
+    max-width: 360px;
+    margin: 0 auto; /* Center horizontally */
+    margin-top: -10px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 72vh;
+  }
+  
+  
+  /* Blurred Content (Scrollable) */
+  .blurredContent {
+    filter: blur(7px);
+    pointer-events: none;
+    user-select: none;
+    text-align: center;
+    background: transparent;
+    background-color: #FFFFFF;
+    padding: 15px;
+    border-radius: 5px;
+    width: 100%;
+    /* overflow-y: auto; */
+    /* max-height: 70vh; */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Remove Blur After Payment */
+  .unlockedContent {
+    filter: none;
+    pointer-events: auto;
+  }
+  
+  /* Fixed Section (Initially Hidden) */
+  .fixedSection {
+    position: fixed;
+    bottom: -100px; /* Start Hidden */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 385px;
+    /* background: rgba(238, 249, 255, 0.8); */
+    padding: 20px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: bottom 0.4s ease-in-out;
+    opacity: 0; /* Initially Hidden */
+    visibility: hidden;
+  }
+  
+  /* Make Fixed Section Visible */
+  .fixedSection.visible {
+    bottom: 0;
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Unlock Button */
+  .unlockBtn {
+    width: 325px;
+    height: 41px;
+    border-radius: 100px;
+    background: #304DFF;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+    position: relative;
+    padding-left: 60px;
+  }
+  
+  /* White Circular Lock Icon */
+  .lockCircle {
+    width: 39px;
+    height: 39px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 1px;
+  }
+  
+  /* Lock Icon */
+  .lockIcon {
+    color: #FA3E3E;
+    font-size: 16px;
+  }
+  
+  /* Tick Marked Content */
+  .contentList {
+    text-align: left;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Individual Content Items */
+  .contentItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #000000;
+  }
+  
+  /* Check Badge Icon */
+  .checkIcon {
+    font-size: 20px;
+    color: #304DFF;
+  }
+  

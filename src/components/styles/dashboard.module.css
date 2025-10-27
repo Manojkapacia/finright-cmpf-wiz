@@ -1,0 +1,137 @@
+.scroller::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+.pfAmount {
+  font-size: 1.37rem;
+  font-weight: 400;
+}
+.KycHeading {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.kycHeadText {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.kycSubText {
+  font-size: 0.87rem;
+  font-weight: 300;
+}
+.kycDetailsCheck {
+  font-size: 0.87rem;
+  font-weight: 700;
+}
+.nextStep {
+  font-size: 0.87rem;
+  font-weight: 400;
+}
+.nextStepMutedText {
+  font-size: 0.5rem;
+  font-weight: 400;
+}
+
+.pfCard {
+  background: linear-gradient(
+    to bottom,
+    #122a7b 0%,
+    #00124f 33%,
+    #041448 66%,
+    #111627 100%
+
+  );
+  /* border-radius: 0.8rem !important; */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.pfCardmore {
+  background: linear-gradient(
+    to bottom,
+    #122a7b 0%,
+    #00124f 33%,
+    #041448 66%,
+    #111627 100%
+  );
+  background-origin: 0;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+.uanNumber {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.userName {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.pfBalance{
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.pfAmount{
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.vanityCardHiglightedText{
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.riskText{
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+.WithdrawBtn {
+  border-radius: 2rem !important;
+  background-color: #ffffff !important;
+  color: #00124f !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+
+/* Risk Card Css */
+.checkNowBtn {
+  border-radius: 2rem !important;
+  font-size: 1rem !important;
+  text-transform: none !important;
+  background-color: #00124f !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.downloadButton {
+  border-radius: 2rem !important;
+  border: 1px solid #ffffff !important;
+  background-color: #00124f !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  width: 100%; 
+  text-align: center;
+}
+
+
+.riskMeterImage {
+  height: 5.5rem;
+  width: 12rem;
+}
+.clickeffect:active {
+  transform: scale(0.95);
+}
+
+.textWarningCustom {
+  color: #F56905!important
+}
+
+@media (max-width: 550px) {
+  .riskMeterImage {
+    height: 5.5rem;
+    width: 9.8rem;
+  }
+}
+@media (min-width: 550px) and (max-width: 1030px) {
+  .riskMeterImage {
+    height: 5.5rem;
+    width: 8rem;
+  }
+}
+
+/* pf analysis starts here */
+

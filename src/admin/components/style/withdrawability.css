@@ -1,0 +1,79 @@
+.report-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.category {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+}
+
+.category-title {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.summary-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.summary-item {
+  background-color: #e0e7ff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1e3a8a;
+}
+
+.subcategories {
+  margin-top: 10px;
+}
+
+.subcategory {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.subcategory-title {
+  font-size: 18px;
+  color: #444;
+}
+
+.details-container {
+  margin-left: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+.detail {
+  margin: 5px 0;
+}
+
+.message-container {
+  margin-top: 10px;
+}
+
+.message-title {
+  font-size: 16px;
+  color: #222;
+  margin-bottom: 5px;
+}
+
+.message-list {
+  padding-left: 20px;
+}
+
+.message-item {
+  list-style-type: disc;
+  margin-bottom: 5px;
+  color: #444;
+}

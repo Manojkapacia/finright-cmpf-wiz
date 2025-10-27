@@ -1,0 +1,80 @@
+.kycLabel {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.kycValue {
+    font-size: 0.88rem;
+    font-weight: 300;
+}
+
+.card-bottom-shadow {
+    box-shadow: 0 4px 8px rgba(50, 50, 50, 0.5);
+    border: none;
+}
+
+
+.card-bottom-shadow:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.selectSeccess {
+    background-color: #27DEBF;
+    padding: 0.7rem;
+    border-radius: 0.2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.byDefaultSeccess {
+    background-color: #eef9ff;
+    padding: 0.7rem;
+    border-radius: 0.2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.changeCheckbox:focus {
+    /* transform: scale(1.5);
+    background: #DCDCDC !important;
+    border-color: #DCDCDC !important; */
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.kycHeading {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.incorrectButton{
+    border: 1px solid #00124F !important;
+    color: #00124F!important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    border-radius: 2rem !important;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+.correctButton{
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background-color: #00124F!important;
+    border-radius: 2rem !important;
+}
+
+.incorrectButton:hover {
+    background-color: #2D565D !important;
+    color: white !important;
+}
+
+@media only screen and (max-width: 500px) {
+    .kycHeading {
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+}
