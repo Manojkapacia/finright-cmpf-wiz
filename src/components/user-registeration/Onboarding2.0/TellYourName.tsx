@@ -61,7 +61,7 @@ const TellYourName = () => {
                         <div className="pt-5">
 
                             <TitleSubtitleBlock
-                                title="Tell us more about yourself"
+                                title="tell us about you"
                             />
                         </div>
 
