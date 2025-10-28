@@ -27,6 +27,8 @@ import { MdOutlineNotificationsActive } from "react-icons/md";
 import { FaRegCalendarAlt, FaUserAlt } from "react-icons/fa";
 import { IoMdTime } from "react-icons/io";
 import moment from "moment";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../components/ui/tabs";
+import VanityCard from "../../../components/dashboard/VanityCard/VanityCard";
 
 
 const PFPassbookMainPage = () => {
@@ -1421,21 +1423,113 @@ const PFPassbookMainPage = () => {
 
 
                       </div>
-                    </> : <div style={{ paddingBottom: "90px" }}>
-                      <TabProvider>
-                        <TabComponent scrapingStatus={scrapingStatus} type={type} currentUanData={currentUanData} activeTab={activeTab} setScrapingStatus={setScrapingStatus}
-                          otpHandling={{
-                            isEpfoLoading,
-                            handleVerifyOtp,
-                            handleResendOtp,
-                            handleVerify,
-                            processedUan,
-                            otpmodel,
-                            setOtpmodel,
-                            credentials
-                          }}
-                        />
-                      </TabProvider>
+                    </> : <div style={{ paddingBottom: "20px" }}>
+                      {/* VanityCard at top */}
+                      <VanityCard
+                        fullNameDownload={currentUanData?.rawData?.data?.profile?.fullName}
+                        isScrappedFully={currentUanData?.rawData?.isScrappedFully}
+                        currentUanData={currentUanData}
+                        uan={currentUanData?.rawData?.data?.profile?.UAN}
+                        fullName={currentUanData?.rawData?.data?.profile?.fullName}
+                        totalPfBalance={currentUanData?.reportData?.totalPfBalance}
+                        totalInterest={currentUanData?.reportData?.totalInterestEarned}
+                        lastUpdated={currentUanData?.rawData?.data?.home?.lastUpdated}
+                        icon={false}
+                        chevron={false}
+                        onRefresh={() => {
+                          setShowModal({ show: true, type: "verifyEpfoPassbook", disableAutoVerification: true });
+                        }}
+                      />
+
+                      {/* Tabs at top below VanityCard */}
+                      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-3">
+                        <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-white rounded-xl shadow-sm">
+                          <TabsTrigger 
+                            value="pf-report" 
+                            className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+                          >
+                            PF Report
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="passbook" 
+                            className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+                          >
+                            Passbook
+                          </TabsTrigger>
+                          {currentUanData?.rawData?.isScrappedFully && (
+                            <TabsTrigger 
+                              value="claims" 
+                              className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+                            >
+                              Claims
+                            </TabsTrigger>
+                          )}
+                          <TabsTrigger 
+                            value="my-account" 
+                            className="text-xs py-2 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+                          >
+                            My Account
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="pf-report" className="mt-3">
+                          <TabProvider>
+                            <TabComponent 
+                              scrapingStatus={scrapingStatus} 
+                              type={type} 
+                              currentUanData={currentUanData} 
+                              activeTab="pf-report" 
+                              setScrapingStatus={setScrapingStatus}
+                              otpHandling={{
+                                isEpfoLoading,
+                                handleVerifyOtp,
+                                handleResendOtp,
+                                handleVerify,
+                                processedUan,
+                                otpmodel,
+                                setOtpmodel,
+                                credentials
+                              }}
+                            />
+                          </TabProvider>
+                        </TabsContent>
+
+                        <TabsContent value="passbook" className="mt-3">
+                          <TabProvider>
+                            <TabComponent 
+                              scrapingStatus={scrapingStatus} 
+                              type={type} 
+                              currentUanData={currentUanData} 
+                              activeTab="passbook" 
+                              setScrapingStatus={setScrapingStatus}
+                              otpHandling={{
+                                isEpfoLoading,
+                                handleVerifyOtp,
+                                handleResendOtp,
+                                handleVerify,
+                                processedUan,
+                                otpmodel,
+                                setOtpmodel,
+                                credentials
+                              }}
+                            />
+                          </TabProvider>
+                        </TabsContent>
+
+                        {currentUanData?.rawData?.isScrappedFully && (
+                          <TabsContent value="claims" className="mt-3">
+                            <div className="px-3">
+                              <p className="text-center text-muted-foreground">Claims data will be displayed here</p>
+                            </div>
+                          </TabsContent>
+                        )}
+
+                        <TabsContent value="my-account" className="mt-3">
+                          <div className="px-3">
+                            <p className="text-center text-muted-foreground">My Account data will be displayed here</p>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     </div>
                   }
 

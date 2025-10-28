@@ -40,7 +40,7 @@ export function KYCProgressLoader({ fromPercent, toPercent }: KYCProgressLoaderP
   const [progress, setProgress] = useState(fromPercent);
 
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout | number;
 
     if (progress < toPercent) {
       interval = setInterval(() => {
